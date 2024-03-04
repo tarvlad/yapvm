@@ -78,8 +78,16 @@ const InstructionP &FunctionP::instr(size_t idx) const {
 }
 
 
+static bool is_code_object_line(const std::string &line) {
+    return line.substr(0, 15) == "Disassembly of " && line[line.size() - 2] == ':';
+}
+
+
 std::vector<FunctionP> yapvm::parse(const std::string &program_text) {
     std::vector<std::string> lines = split(program_text, std::regex("\n"));
+
     
+    
+    //TODO
     return {};
 }

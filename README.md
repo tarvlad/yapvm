@@ -26,7 +26,7 @@ yet another python virtual machine
 * Scope
 * Basic GC implementation
 * Interpreter finished 
-* Threads in work, most part of threads orchestrator finished
+* Threads in work
 
 ### 27.05.2024
 * Optimized GC
