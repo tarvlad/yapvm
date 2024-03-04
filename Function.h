@@ -6,17 +6,18 @@
 
 namespace yapvm {
 
+
 /// <summary>
 /// Represents parsed function.
 /// </summary>
 class FunctionP {
     std::string name_;
-    std::span<InstructionP> code_;
+    std::vector<InstructionP> code_;
 
 public:
     FunctionP(
-        std::string name,
-        std::vector<InstructionP> code
+        const std::string &name,
+        const std::vector<InstructionP> &code
     );
 
     ~FunctionP();

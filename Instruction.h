@@ -13,7 +13,7 @@ namespace yapvm {
 /// </summary>
 class InstructionP {
     std::string name_; // instruction name, one of from Opcodes.h 
-    std::span<std::string> args_;
+    std::vector<std::string> args_;
     size_t label_; // label for jump and etc
     bool jump_target_;
 

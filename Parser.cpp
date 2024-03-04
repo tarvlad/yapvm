@@ -1,8 +1,8 @@
 #include "Parser.h"
 #include "Instruction.h"
 #include "Function.h"
+#include "Utils.h"
 #include <inttypes.h>
-
 
 using namespace yapvm;
 
@@ -13,12 +13,8 @@ InstructionP::InstructionP(
     size_t label, 
     bool jump_target
 ) 
-    : name_{ name }, args_{ new std::string[args.size()], args.size()},
+    : name_{ name }, args_{ args },
     label_{ label }, jump_target_{ jump_target } {
-
-    for (size_t i = 0; i < args.size(); i++) {
-        args_[i] = args[i];
-    }
 }
 
 
@@ -56,13 +52,9 @@ InstructionP::InstructionP()
     : name_{ }, args_{ }, label_{ }, jump_target_{ } {}
 
 
-FunctionP::FunctionP(std::string name, std::vector<InstructionP> code) 
+FunctionP::FunctionP(const std::string &name, const std::vector<InstructionP> &code) 
     : name_{ name }, 
-    code_{ new InstructionP[code.size()], code.size()} {
-
-    for (size_t i = 0; i < code.size(); i++) {
-        code_[i] = code[i];
-    }
+    code_{ code } {
 }
 
 
@@ -83,4 +75,11 @@ size_t FunctionP::num_instrs() const {
 
 const InstructionP &FunctionP::instr(size_t idx) const {
     return code_[idx];
+}
+
+
+std::vector<FunctionP> yapvm::parse(const std::string &program_text) {
+    std::vector<std::string> lines = split(program_text, std::regex("\n"));
+    
+    return {};
 }
