@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include "Function.h"
 #include "Parser.h"
+#include "Module.h"
 
 using namespace yapvm;
 
@@ -13,7 +14,7 @@ int main(int argc, char **argv) {
     std::string filename = argv[1]; //TODO check
     std::string file_content = read_file(filename);
 
-    std::vector<FunctionP> code = parse(file_content);
+    Module code = parse(filename, file_content);
     file_content.erase();
 
     //TODO
