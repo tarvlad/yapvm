@@ -6,6 +6,8 @@
 #include <utility>
 #include <inttypes.h>
 #include <cassert>
+#include <optional>
+#include <set>
 
 using namespace yapvm;
 
@@ -82,23 +84,59 @@ const InstructionP &FunctionP::instr(size_t idx) const {
 
 
 static bool is_code_object_line(const std::string &line) {
-    return line.substr(0, 15) == "Disassembly of " && line[line.size() - 1] == ':';
+    std::vector<std::string> tokens = split(line, std::regex{ " " });
+    return tokens[0] == "Disassembly" && tokens[1] == "of" && line.contains('<') && line.contains('>');
+}
+
+
+static std::set<std::string> ACCEPTED_INSTRUCTIONS = {
+    //TODO
+};
+
+
+static std::optional<InstructionP> parse_instruction(const std::string &line) {
+    int x = 42;
+
+    //TODO get additional content in (), after this tokenize, parse and return
+
+    return {};
 }
 
 
 static std::vector<InstructionP> parse_code(std::span<std::string> code_lines) {
-    return {};//TODO
+    std::vector<InstructionP> instructions;
+    for (const std::string &line : code_lines) {
+        parse_instruction(line).and_then(
+            [&instructions](InstructionP &&i) -> std::optional<InstructionP> {
+                instructions.emplace_back(i);
+                return {};
+            }//TODO check
+        );
+    }
+    return instructions;
 }
 
 
 static std::string parse_code_object_name(const std::string &name) {
     assert(is_code_object_line(name));
-    return "";//TODO
+  
+    std::string definition = split(split(name, std::regex{ "<" })[1], std::regex{ ">" })[0];
+    std::vector<std::string> tokens = split(definition, std::regex{ " " });
+
+    assert(
+        tokens[0] == "code" && 
+        tokens[1] == "object" && 
+        tokens[3] == "at" && 
+        tokens[5] == "file" && 
+        tokens[7] == "line"
+    );
+
+    return tokens[2];
 }
 
 
 Module yapvm::parse(const std::string &module_name, const std::string &program_text) {
-    std::vector<std::string> lines = split(program_text, std::regex("\n"));
+    std::vector<std::string> lines = split(program_text, std::regex{ "\n" });
 
     std::vector<size_t> function_def_lines;
     for (size_t i = 0; i < lines.size(); i++) {
@@ -145,6 +183,7 @@ Module yapvm::parse(const std::string &module_name, const std::string &program_t
     }
 
     std::vector<FunctionP> functions;
+    assert(function_names.size() == function_def_lines.size() + 1);
     for (size_t i = 0; i < function_names.size(); i++) {
         std::vector<InstructionP> instructions = parse_code(functions_code[i]);
         functions.emplace_back(function_names[i], instructions);
