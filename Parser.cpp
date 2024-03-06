@@ -8,23 +8,20 @@
 #include <cassert>
 #include <optional>
 #include <set>
+#include <utility>
 
 using namespace yapvm;
 
 
 InstructionP::InstructionP(
     const std::string &name, 
-    const std::vector<std::string> &args,  
+    const std::string &args,  
+    size_t arg_id,
     size_t label, 
     bool jump_target
 ) 
-    : name_{ name }, args_{ args },
+    : name_{ name }, args_{ args }, arg_id_{ arg_id },
     label_{ label }, jump_target_{ jump_target } {
-}
-
-
-InstructionP::~InstructionP() {
-    delete[] args_.data();
 }
 
 
@@ -33,13 +30,8 @@ const std::string &InstructionP::name() const {
 }
 
 
-size_t InstructionP::num_args() const {
-    return args_.size();
-}
-
-
-const std::string &InstructionP::arg(size_t i) const {
-    return args_[i];
+const std::string &InstructionP::args() const {
+    return args_;
 }
 
 
@@ -54,7 +46,7 @@ bool InstructionP::is_jump_target() const {
 
 
 InstructionP::InstructionP()
-    : name_{ }, args_{ }, label_{ }, jump_target_{ } {}
+    : name_{ }, args_{ }, label_{ }, arg_id_{ }, jump_target_ { } {}
 
 
 FunctionP::FunctionP(const std::string &name, const std::vector<InstructionP> &code) 
@@ -84,7 +76,7 @@ const InstructionP &FunctionP::instr(size_t idx) const {
 
 
 static bool is_code_object_line(const std::string &line) {
-    std::vector<std::string> tokens = split(line, std::regex{ " " });
+    std::vector<std::string> tokens = split(line);
     return tokens[0] == "Disassembly" && tokens[1] == "of" && line.contains('<') && line.contains('>');
 }
 
@@ -94,24 +86,46 @@ static std::set<std::string> ACCEPTED_INSTRUCTIONS = {
 };
 
 
-static std::optional<InstructionP> parse_instruction(const std::string &line) {
-    int x = 42;
+static std::pair<std::string, std::string> wrap_instr_args(const std::string &instr) {
+    size_t first_brace_pos = instr.find_first_of('(');
+    size_t last_brace_pos = instr.find_last_of(')');
 
-    //TODO get additional content in (), after this tokenize, parse and return
+    std::string instr_code = instr.substr(0, first_brace_pos);
+    std::string instr_args = instr.substr(first_brace_pos, last_brace_pos - first_brace_pos + 1);
 
-    return {};
+    return { instr_code, instr_args };
+}
+
+
+static InstructionP parse_instruction(const std::string &line) {
+    //TODO get additional content in (...), after this: tokenize, parse and return
+    assert(!line.empty());
+
+    std::pair<std::string, std::string> divided_instr = wrap_instr_args(line);
+    std::string &instr_code = divided_instr.first;
+    std::string &args = divided_instr.second;
+
+    std::vector<std::string> instr_code_tokens = not_matched(split(instr_code), std::regex{ "\\s*" });
+    assert(instr_code_tokens.size() >= 2);
+
+    size_t line_num_offset = 0;
+    if (is_number(instr_code_tokens[0]) && is_number(instr_code_tokens[1])) {
+        line_num_offset = 1;
+    }
+
+    size_t label = stosz(instr_code_tokens[line_num_offset]);
+    std::string &name = instr_code_tokens[1 + line_num_offset];
+    size_t arg_id = stosz(instr_code_tokens[2 + line_num_offset]);
+
+    //assert(ACCEPTED_INSTRUCTIONS.contains(name));
+    return {};//TODO
 }
 
 
 static std::vector<InstructionP> parse_code(std::span<std::string> code_lines) {
     std::vector<InstructionP> instructions;
     for (const std::string &line : code_lines) {
-        parse_instruction(line).and_then(
-            [&instructions](InstructionP &&i) -> std::optional<InstructionP> {
-                instructions.emplace_back(i);
-                return {};
-            }//TODO check
-        );
+        instructions.emplace_back(parse_instruction(line));
     }
     return instructions;
 }
@@ -121,7 +135,7 @@ static std::string parse_code_object_name(const std::string &name) {
     assert(is_code_object_line(name));
   
     std::string definition = split(split(name, std::regex{ "<" })[1], std::regex{ ">" })[0];
-    std::vector<std::string> tokens = split(definition, std::regex{ " " });
+    std::vector<std::string> tokens = split(definition);
 
     assert(
         tokens[0] == "code" && 
@@ -136,7 +150,7 @@ static std::string parse_code_object_name(const std::string &name) {
 
 
 Module yapvm::parse(const std::string &module_name, const std::string &program_text) {
-    std::vector<std::string> lines = split(program_text, std::regex{ "\n" });
+    std::vector<std::string> lines = not_matched(split(program_text, std::regex{ "\n" }), std::regex{ "\\s*" });
 
     std::vector<size_t> function_def_lines;
     for (size_t i = 0; i < lines.size(); i++) {

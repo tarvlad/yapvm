@@ -3,6 +3,8 @@
 namespace yapvm {
 namespace Opcodes {
 
+//TODO filter needed
+
 #define CACHE                                    0
 #define BEFORE_ASYNC_WITH                        1
 #define BEFORE_WITH                              2
