@@ -13,7 +13,7 @@ enum TokenType {
     PRINT,
 
     // THREADS
-    THREAD,
+    THREAD, 
 
     // DEF
     CLASS, DEF, 
@@ -89,6 +89,8 @@ enum TokenType {
 
     // LITERALS
     INT, FLOAT, NAME, STRING,
+
+    IDENITIFIER,
 
     ERROR
 };

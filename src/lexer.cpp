@@ -2,6 +2,11 @@
 #include <cassert>
 #include <cctype>
 #include <optional>
+#include <stack>
+
+#ifndef __fallthrough
+#define __fallthrough [[fallthrough]]
+#endif
 
 using namespace yapvm;
 
@@ -46,6 +51,8 @@ static bool try_tokenize_keyword(const std::string &source, const std::string &k
 
 
 static std::optional<Token> try_parse_keyword(const std::string &source, size_t cursor_pos, size_t line) {
+    assert(!isdigit(source[cursor_pos]));
+
     if (!(std::islower(source[cursor_pos]) || std::isupper(source[cursor_pos]))) {
         return std::nullopt;
     }
@@ -59,7 +66,6 @@ static std::optional<Token> try_parse_keyword(const std::string &source, size_t 
             return { { source.substr(cursor_pos, 8), CONTINUE, line } };
         }
     case 7:
-
     case 6: // return, Thread
         if (try_tokenize_keyword(source, "return", cursor_pos)) {
             return { { source.substr(cursor_pos, 6), RETURN, line } };
@@ -121,6 +127,94 @@ static std::optional<Token> try_parse_keyword(const std::string &source, size_t 
     return std::nullopt;
 }
 
+
+// return length of integer in symbols, 0 if not integer
+size_t try_tokenize_int(const std::string &str, size_t cursor_pos) {
+    size_t int_len = 0;
+    while (isdigit(str[cursor_pos])) {
+        int_len++;
+        cursor_pos++;
+        if (cursor_pos == str.size()) {
+            break;
+        }
+    }
+
+    return int_len;
+}
+
+
+// return length of float in symbols, 0 if not float
+size_t try_tokenize_float(const std::string &str, size_t cursor_pos) {
+    size_t float_first_part_len = try_tokenize_int(str, cursor_pos);
+    if (float_first_part_len == 0) {
+        return 0;
+    }
+    cursor_pos += float_first_part_len;
+
+    if (str[cursor_pos] != '.') {
+        return 0;
+    }
+    cursor_pos++;
+    size_t float_second_part_len = try_tokenize_int(str, cursor_pos);
+    return float_first_part_len + float_second_part_len + 1;
+}
+
+
+static bool isletter(char c) {
+    return std::islower(c) || std::isupper(c);
+}
+
+
+static bool is_identifier_begin(char c) {
+    return isletter(c) || c == '_';
+}
+
+
+static size_t try_tokenize_identifier(const std::string &str, size_t cursor_pos) {
+    if (!is_identifier_begin(str[cursor_pos])) {
+        return 0;
+    }
+
+    size_t len = 0;
+    char curr = str[cursor_pos];
+
+    while (isdigit(curr) || isletter(curr) || curr == '_') {
+        len++;
+        cursor_pos++;
+        if (cursor_pos == str.size()) {
+            break;
+        }
+        curr = str[cursor_pos];
+    }
+
+    return len;
+}
+
+
+static size_t try_tokenize_quot_content(const std::string &str, size_t cursor_pos) {
+    if (str[cursor_pos] != '"' && str[cursor_pos] != '\'') {
+        return 0;
+    }
+
+    char open_quot = str[cursor_pos];
+    size_t length = 0;
+    cursor_pos++;
+
+    while (true) {
+        if (str[cursor_pos] == open_quot && str[cursor_pos - 1] != '\\') {
+            break;
+        }
+        cursor_pos++;
+        if (cursor_pos == str.size()) { // unclosed string
+            return 0;
+        }
+        length++;
+    }
+
+    return length;
+}
+
+
 /*
  * Categories sorted by matching priority
  *
@@ -132,7 +226,7 @@ static std::optional<Token> try_parse_keyword(const std::string &source, size_t 
  *              | "def"      | "or"     | "if"
  *
  * number     ::= integer | float
- * integer    ::= decint | octint | hexint
+ * integer    ::= decint | hexint
  *
  * identifier ::= (letter | "_") (letter | digit | "_")
  * letter     ::= lowercase | uppercase
@@ -140,13 +234,271 @@ static std::optional<Token> try_parse_keyword(const std::string &source, size_t 
  * uppercase  ::= "A" | "B" | ... | "Z"
  * digit      ::= "0" | "1" | ... | "9"
  *
- * string     ::= "'" [^"\n""'"]* "'" | '"' [^'\n' '"']* '"'
+ * string     ::= "'" [^"\n" "'"]* "'" | '"' [^'\n' '"']* '"'
  */
 std::vector<Token> yapvm::tokenize(const std::string &source) {
-    size_t line = 0;
-    for (size_t cursor = 0; cursor < source.size(); cursor++) {
+    std::vector<Token> tokens;
+    size_t line = 1;
+    std::stack<size_t> indents;
+    indents.push(0);
 
+    assert(source.find('\t') == std::string::npos);
+
+    size_t line_start = 0;
+    size_t pos = 0;
+
+    while (pos < source.size()) {
+        //TODO check '\r'???
+
+        if (source[pos] == '\n') {
+            tokens.emplace_back(std::string{ source[pos] }, NEWLINE, line);
+            line++;
+            pos++;
+            line_start = pos;
+
+            size_t line_indent = 0;
+            while (source[pos] == ' ') {
+                line_indent++;
+                pos++;
+            }
+            if (source[pos] == '\n') {
+                continue; // skip empty line
+            }
+
+            if (line_indent > indents.top()) {
+                indents.push(line_indent);
+                tokens.emplace_back("", INDENT, line);
+            } else {
+                while (line_indent < indents.top()) {
+                    indents.pop();
+                    tokens.emplace_back("", DEDENT, line);
+                }
+            }
+        }
+
+        size_t possible_int_len = try_tokenize_int(source, pos);
+        if (possible_int_len != 0) {
+            tokens.emplace_back(source.substr(pos, possible_int_len), INT, line);
+            pos += possible_int_len;
+            continue;
+        } else {
+            size_t possible_float_len = try_tokenize_float(source, pos);
+            if (possible_float_len != 0) {
+                tokens.emplace_back(source.substr(pos, possible_float_len), FLOAT, line);
+                pos += possible_float_len;
+                continue;
+            }
+        }
+
+        std::optional<Token> possible_keyword = try_parse_keyword(source, pos, line);
+        if (possible_keyword.has_value()) {
+            Token &keyword = possible_keyword.value();
+            tokens.emplace_back(keyword);
+            pos += keyword.lexeme().size();
+            continue;
+        }
+
+        size_t possible_identifier_len = try_tokenize_identifier(source, pos);
+        if (possible_identifier_len != 0) {
+            tokens.emplace_back(source.substr(pos, possible_identifier_len), IDENITIFIER, line);
+            pos += possible_identifier_len;
+            continue;
+        }
+
+        size_t possible_string_len = try_tokenize_quot_content(source, pos);
+        if (possible_string_len != 0) {
+            tokens.emplace_back(source.substr(pos, possible_string_len), STRING, line);
+            pos += possible_string_len;
+            continue;
+        }
+
+        std::string lexeme;
+        TokenType kind = ERROR;
+
+        switch (source[pos]) {
+        case '+':
+            lexeme = "+";
+            kind = PLUS;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "+=";
+                    kind = PLUS_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '-':
+            lexeme = "-";
+            kind = MINUS;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "-=";
+                    kind = MINUS_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '*':
+            lexeme = "*";
+            kind = ASTERISK;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '*') {
+                    lexeme = "**";
+                    kind = DOUBLE_ASTERISK;
+                    pos++;
+                } else if (source[pos + 1] == '=') {
+                    lexeme = "*=";
+                    kind = ASTERISK_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '/':
+            lexeme = "/";
+            kind = SLASH;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '/') {
+                    lexeme = "//";
+                    kind = DOUBLE_SLASH;
+                    pos++;
+                } else if (source[pos + 1] == '=') {
+                    lexeme = "/=";
+                    kind = SLASH_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '%':
+            lexeme = "%";
+            kind = MOD;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "%=";
+                    kind = MOD_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '|':
+            lexeme = "|";
+            kind = PIPE;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "|=";
+                    kind = OR_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '^':
+            lexeme = "^";
+            kind = CARET;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "^=";
+                    kind = XOR_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '&':
+            lexeme = "&";
+            kind = AMPERSAND;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "&=";
+                    kind = AND_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '~':
+            lexeme = "~";
+            kind = TILDE;
+            break;
+        case '<':
+            lexeme = "<";
+            kind = LESS;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '<') {
+                    lexeme = "<<";
+                    kind = LEFT_SHIFT;
+                    if (pos < source.size() - 2) {
+                        if (source[pos + 2] == '=') {
+                            lexeme = "<<=";
+                            kind = LEFT_SHIFT_EQUAL;
+                            pos++;
+                        }
+                    }
+                    pos++;
+                } else if (source[pos + 1] == '=') {
+                    lexeme = "<=";
+                    kind = LESS_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '>':
+            lexeme = ">";
+            kind = GREATER;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '>') {
+                    lexeme = ">>";
+                    kind = RIGHT_SHIFT;
+                    if (pos < source.size() - 2) {
+                        if (source[pos + 2] == '=') {
+                            lexeme = ">>=";
+                            kind = RIGHT_SHIFT_EQUAL;
+                            pos++;
+                        }
+                    }
+                    pos++;
+                } else if (source[pos + 1] == '=') {
+                    lexeme = ">=";
+                    kind = GREATER_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '=':
+            lexeme = "=";
+            kind = EQUALS;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "==";
+                    kind = EQUAL_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '!':
+            lexeme = "!";
+            kind = BANG;
+            if (pos < source.size() - 1) {
+                if (source[pos + 1] == '=') {
+                    lexeme = "!=";
+                    kind = BANG_EQUAL;
+                    pos++;
+                }
+            }
+            break;
+        case '.':
+            lexeme = ".";
+            kind = DOT;
+            break;
+        //TODO PUNCT
+        }
+
+        pos++;
+        tokens.emplace_back(lexeme, kind, line);
+        assert(kind != ERROR); // currently for debugging
     }
+
+    while (indents.size() > 1) {
+        indents.pop();
+        tokens.emplace_back("", DEDENT, line);
+    }
+    tokens.emplace_back("", END_OF_FILE, line);
 
     return {};
 }
