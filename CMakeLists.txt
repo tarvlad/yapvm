@@ -8,9 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(include)
 
 
-add_executable(yapvm 
-    src/main.cpp
-    
+set(SOURCE_ALL
     include/parser.h
     src/parser.cpp
 
@@ -20,3 +18,23 @@ add_executable(yapvm
     include/utils.h
     src/utils.cpp
 )
+
+
+add_executable(yapvm 
+    src/main.cpp
+    ${SOURCE_ALL}
+)
+
+
+add_executable(yapvm_lexer_test
+    test/lexer_test.cpp
+    ${SOURCE_ALL}
+)
+
+enable_testing()
+
+add_test(
+    NAME yapvm_lexer_test
+    COMMAND yapvm_lexer_test 
+)
+

@@ -192,23 +192,35 @@ static size_t try_tokenize_quot_content(const std::string &str, size_t cursor_po
     if (str[cursor_pos] != '"' && str[cursor_pos] != '\'') {
         return 0;
     }
-
+    
+    if (cursor_pos == str.size()) {
+        return 0;
+    }
+    
     char open_quot = str[cursor_pos];
-    size_t length = 0;
+
+    size_t len = 1;
     cursor_pos++;
 
     while (true) {
         if (str[cursor_pos] == open_quot && str[cursor_pos - 1] != '\\') {
+            len++;
+            break;
+        }
+
+        len++;
+        if (str[cursor_pos] == '\n') {
+            len = 0;
             break;
         }
         cursor_pos++;
-        if (cursor_pos == str.size()) { // unclosed string
-            return 0;
+        if (cursor_pos >= str.size()) {
+            len = 0;
+            break;
         }
-        length++;
     }
 
-    return length;
+    return len;
 }
 
 
@@ -240,17 +252,24 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
     indents.push(0);
 
     assert(source.find('\t') == std::string::npos);
+    assert(source.find('\r') == std::string::npos);
 
     size_t line_start = 0;
     size_t pos = 0;
 
     while (pos < source.size()) {
         //TODO check '\r'???
-
+        if (source[pos] == ' ') {
+            pos++;
+            continue;
+        }
         if (source[pos] == '\n') {
             tokens.emplace_back(std::string{ source[pos] }, NEWLINE, line);
             line++;
             pos++;
+            if (pos >= source.size()) {
+                break;
+            }
             line_start = pos;
 
             size_t line_indent = 0;
@@ -532,5 +551,5 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
     }
     tokens.emplace_back("", END_OF_FILE, line);
 
-    return {};
+    return tokens;
 }
