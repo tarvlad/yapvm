@@ -4,9 +4,6 @@
 #include <optional>
 #include <stack>
 
-#ifndef __fallthrough
-#define __fallthrough [[fallthrough]]
-#endif
 
 using namespace yapvm;
 
@@ -486,7 +483,42 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
             lexeme = ".";
             kind = DOT;
             break;
-        //TODO PUNCT
+        case '(':
+            lexeme = "(";
+            kind = LEFT_PAREN;
+            break;
+        case ')':
+            lexeme = ")";
+            kind = RIGHT_PAREN;
+            break;
+        case '{':
+            lexeme = "{";
+            kind = LEFT_BRACE;
+            break;
+        case '}':
+            lexeme = "}";
+            kind = RIGHT_BRACE;
+            break;
+        case '[':
+            lexeme = "[";
+            kind = LEFT_SQ_BRACE;
+            break;
+        case ']':
+            lexeme = "]";
+            kind = RIGHT_SQ_BRACE;
+            break;
+        case ',':
+            lexeme = ",";
+            kind = COMMA;
+            break;
+        case ':':
+            lexeme = ":";
+            kind = COLON;
+            break;
+        case ';':
+            lexeme = ';';
+            kind = SEMICOLON;
+            break;
         }
 
         pos++;

@@ -79,6 +79,8 @@ enum TokenType {
     RIGHT_PAREN,
     LEFT_BRACE,
     RIGHT_BRACE,
+    LEFT_SQ_BRACE,
+    RIGHT_SQ_BRACE,
     COMMA, 
     COLON, 
     SEMICOLON,
