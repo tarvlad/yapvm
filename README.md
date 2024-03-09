@@ -9,7 +9,7 @@ yet another python virtual machine
 ## Notes
 * No async
 * No yield
-* No INSTRUMENTED_*
+* No for loops, no in, only while cycles
 * No exceptions
 * Threads
 * No GIL

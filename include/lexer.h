@@ -92,10 +92,13 @@ enum TokenType {
     // LITERALS
     INT, FLOAT, NAME, STRING,
 
-    IDENITIFIER,
+    IDENTIFIER,
 
     ERROR
 };
+
+
+std::string to_string(TokenType tt);
 
 
 class Token {
@@ -108,11 +111,13 @@ public:
 
     Token(const std::string &lexeme, TokenType kind, size_t line);
 
-    const std::string &lexeme();
+    const std::string &lexeme() const;
     
     TokenType kind() const;
 
     size_t line() const;
+
+    friend bool operator==(const Token &l, const Token &r);
 };
 
 

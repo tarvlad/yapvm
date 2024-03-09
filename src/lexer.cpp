@@ -16,7 +16,7 @@ Token::Token(const std::string &lexeme, TokenType kind, size_t line)
     : lexeme_{ lexeme }, kind_{ kind }, line_{ line } {}
 
 
-const std::string &Token::lexeme() {
+const std::string &Token::lexeme() const {
     return lexeme_;
 }
 
@@ -264,7 +264,7 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
             continue;
         }
         if (source[pos] == '\n') {
-            tokens.emplace_back(std::string{ source[pos] }, NEWLINE, line);
+            tokens.emplace_back("\\n", NEWLINE, line);
             line++;
             pos++;
             if (pos >= source.size()) {
@@ -277,7 +277,7 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
                 line_indent++;
                 pos++;
             }
-            if (source[pos] == '\n') {
+            if (source[pos] == '\n') { //TODO dedents !!!!
                 continue; // skip empty line
             }
 
@@ -316,7 +316,7 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
 
         size_t possible_identifier_len = try_tokenize_identifier(source, pos);
         if (possible_identifier_len != 0) {
-            tokens.emplace_back(source.substr(pos, possible_identifier_len), IDENITIFIER, line);
+            tokens.emplace_back(source.substr(pos, possible_identifier_len), IDENTIFIER, line);
             pos += possible_identifier_len;
             continue;
         }
@@ -552,4 +552,158 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
     tokens.emplace_back("", END_OF_FILE, line);
 
     return tokens;
+}
+
+
+bool yapvm::operator==(const Token &l, const Token &r) {
+    if (l.kind() != r.kind() || l.line() != r.line()) {
+        return false;
+    }
+    return l.lexeme() == r.lexeme();
+}
+
+
+std::string yapvm::to_string(TokenType tt) {
+    switch (tt) {
+    case PRINT:
+        return "PRINT";
+    case THREAD:
+        return "THREAD";
+    case CLASS:
+        return "CLASS";
+    case DEF:
+        return "DEF";
+    case RETURN:
+        return "RETURN";
+    case WHILE:
+        return "WHILE";
+    case BREAK:
+        return "BREAK";
+    case CONTINUE:
+        return "CONTINUE";
+    case IF:
+        return "IF";
+    case ELIF:
+        return "ELIF";
+    case ELSE:
+        return "ELSE";
+    case TRUE:
+        return "TRUE";
+    case FALSE:
+        return "FALSE";
+    case NONE:
+        return "NONE";
+    case AND:
+        return "AND";
+    case OR:
+        return "OR";
+    case NOT:
+        return "NOT";
+    case PASS:
+        return "PASS";
+    case PLUS:
+        return "PLUS";
+    case MINUS:
+        return "MINUS";
+    case ASTERISK:
+        return "ASTERISK";
+    case DOUBLE_ASTERISK:
+        return "DOUBLE_ASTERISK";
+    case SLASH:
+        return "SLASH";
+    case DOUBLE_SLASH:
+        return "DOUBLE_SLASH";
+    case MOD:
+        return "MOD";
+    case PIPE:
+        return "PIPE";
+    case CARET:
+        return "CARET";
+    case AMPERSAND:
+        return "AMPERSAND";
+    case TILDE:
+        return "TILDE";
+    case LEFT_SHIFT:
+        return "LEFT_SHIFT";
+    case RIGHT_SHIFT:
+        return "RIGHT_SHIFT";
+    case LESS:
+        return "LESS";
+    case LESS_EQUAL:
+        return "LESS_EQUAL";
+    case GREATER:
+        return "GREATER";
+    case GREATER_EQUAL:
+        return "GREATER_EQUAL";
+    case EQUALS:
+        return "EQUALS";
+    case EQUAL_EQUAL:
+        return "EQUAL_EQUAL";
+    case BANG:
+        return "BANG";
+    case BANG_EQUAL:
+        return "BANG_EQUAL";
+    case PLUS_EQUAL:
+        return "PLUS_EQUAL";
+    case MINUS_EQUAL:
+        return "MINUS_EQUAL";
+    case ASTERISK_EQUAL:
+        return "ASTERISK_EQUAL";
+    case SLASH_EQUAL:
+        return "SLASH_EQUAL";
+    case MOD_EQUAL:
+        return "MOD_EQUAL";
+    case AND_EQUAL:
+        return "AND_EQUAL";
+    case OR_EQUAL:
+        return "OR_EQUAL";
+    case XOR_EQUAL:
+        return "XOR_EQUAL";
+    case LEFT_SHIFT_EQUAL:
+        return "LEFT_SHIFT_EQUAL";
+    case RIGHT_SHIFT_EQUAL:
+        return "RIGHT_SHIFT_EQUAL";
+    case DOT:
+        return "DOT";
+    case LEFT_PAREN:
+        return "LEFT_PAREN";
+    case RIGHT_PAREN:
+        return "RIGHT_PAREN";
+    case LEFT_BRACE:
+        return "LEFT_BRACE";
+    case RIGHT_BRACE:
+        return "RIGHT_BRACE";
+    case LEFT_SQ_BRACE:
+        return "LEFT_SQ_BRACE";
+    case RIGHT_SQ_BRACE:
+        return "RIGHT_SQ_BRACE";
+    case COMMA:
+        return "COMMA";
+    case COLON:
+        return "COLON";
+    case SEMICOLON:
+        return "SEMICOLON";
+    case INDENT:
+        return "INDENT";
+    case DEDENT:
+        return "DEDENT";
+    case NEWLINE:
+        return "NEWLINE";
+    case END_OF_FILE:
+        return "END_OF_FILE";
+    case INT:
+        return "INT";
+    case FLOAT:
+        return "FLOAT";
+    case NAME:
+        return "NAME";
+    case STRING:
+        return "STRING";
+    case IDENTIFIER:
+        return "IDENTIFIER";
+    case ERROR:
+        return "ERROR";
+    default:
+        assert(false);
+    }
 }
