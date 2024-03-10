@@ -6,63 +6,63 @@
 
 
 namespace yapvm {
-
+namespace lexer {
 
 enum TokenKind {
     // IO
     PRINT,
 
     // THREADS
-    THREAD, 
+    THREAD,
 
     // DEF
-    CLASS, DEF, 
-    
+    CLASS, DEF,
+
     // CFG
-    RETURN, 
-    WHILE, 
-    BREAK, 
-    CONTINUE, 
-    IF, 
-    ELIF, 
+    RETURN,
+    WHILE,
+    BREAK,
+    CONTINUE,
+    IF,
+    ELIF,
     ELSE,
 
     // CONST
-    TRUE, 
-    FALSE, 
+    TRUE,
+    FALSE,
     NONE,
 
     // LOGIC
-    AND, 
-    OR, 
+    AND,
+    OR,
     NOT,
 
     // DUMMY
     PASS,
 
     // OPERATORS
-    PLUS, 
-    MINUS, 
-    ASTERISK, 
+    PLUS,
+    MINUS,
+    ASTERISK,
     DOUBLE_ASTERISK,
-    SLASH, 
-    DOUBLE_SLASH, 
+    SLASH,
+    DOUBLE_SLASH,
     MOD,
-    PIPE, 
-    CARET, 
-    AMPERSAND, 
-    TILDE, 
-    LEFT_SHIFT, 
-    RIGHT_SHIFT, 
-    LESS, 
+    PIPE,
+    CARET,
+    AMPERSAND,
+    TILDE,
+    LEFT_SHIFT,
+    RIGHT_SHIFT,
+    LESS,
     LESS_EQUAL,
-    GREATER, 
+    GREATER,
     GREATER_EQUAL,
-    EQUALS, 
+    EQUALS,
     EQUAL_EQUAL,
-    BANG, 
+    BANG,
     BANG_EQUAL,
-    PLUS_EQUAL, 
+    PLUS_EQUAL,
     MINUS_EQUAL,
     ASTERISK_EQUAL,
     SLASH_EQUAL,
@@ -75,14 +75,14 @@ enum TokenKind {
     DOT,
 
     // PUNCT
-    LEFT_PAREN, 
+    LEFT_PAREN,
     RIGHT_PAREN,
     LEFT_BRACE,
     RIGHT_BRACE,
     LEFT_SQ_BRACE,
     RIGHT_SQ_BRACE,
-    COMMA, 
-    COLON, 
+    COMMA,
+    COLON,
     SEMICOLON,
     INDENT,
     DEDENT,
@@ -112,7 +112,7 @@ public:
     Token(const std::string &lexeme, TokenKind kind, size_t line);
 
     const std::string &lexeme() const;
-    
+
     TokenKind kind() const;
 
     size_t line() const;
@@ -124,4 +124,5 @@ public:
 std::vector<Token> tokenize(const std::string &source);
 
 
+}
 }

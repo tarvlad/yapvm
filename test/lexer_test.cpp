@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "utils.h"
 
+using namespace yapvm::lexer;
 using namespace yapvm;
 
 

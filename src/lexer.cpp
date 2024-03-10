@@ -5,7 +5,7 @@
 #include <stack>
 
 
-using namespace yapvm;
+using namespace yapvm::lexer;
 
 
 Token::Token()
@@ -245,7 +245,7 @@ static size_t try_tokenize_quot_content(const std::string &str, size_t cursor_po
  *
  * string     ::= "'" [^"\n" "'"]* "'" | '"' [^'\n' '"']* '"'
  */
-std::vector<Token> yapvm::tokenize(const std::string &source) {
+std::vector<Token> yapvm::lexer::tokenize(const std::string &source) {
     std::vector<Token> tokens;
     size_t line = 1;
     std::stack<size_t> indents;
@@ -555,7 +555,7 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
 }
 
 
-bool yapvm::operator==(const Token &l, const Token &r) {
+bool yapvm::lexer::operator==(const Token &l, const Token &r) {
     if (l.kind() != r.kind() || l.line() != r.line()) {
         return false;
     }
@@ -563,7 +563,7 @@ bool yapvm::operator==(const Token &l, const Token &r) {
 }
 
 
-std::string yapvm::to_string(TokenKind tt) {
+std::string yapvm::lexer::to_string(TokenKind tt) {
     switch (tt) {
     case PRINT:
         return "PRINT";
