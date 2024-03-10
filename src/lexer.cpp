@@ -292,16 +292,16 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
             }
         }
 
-        size_t possible_int_len = try_tokenize_int(source, pos);
-        if (possible_int_len != 0) {
-            tokens.emplace_back(source.substr(pos, possible_int_len), INT, line);
-            pos += possible_int_len;
+        size_t possible_float_len = try_tokenize_float(source, pos);
+        if (possible_float_len != 0) {
+            tokens.emplace_back(source.substr(pos, possible_float_len), FLOAT, line);
+            pos += possible_float_len;
             continue;
         } else {
-            size_t possible_float_len = try_tokenize_float(source, pos);
-            if (possible_float_len != 0) {
-                tokens.emplace_back(source.substr(pos, possible_float_len), FLOAT, line);
-                pos += possible_float_len;
+            size_t possible_int_len = try_tokenize_int(source, pos);
+            if (possible_int_len != 0) {
+                tokens.emplace_back(source.substr(pos, possible_int_len), INT, line);
+                pos += possible_int_len;
                 continue;
             }
         }
