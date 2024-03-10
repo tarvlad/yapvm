@@ -97,7 +97,7 @@ module yapvm {
         )
 
     expr_context = 
-        Load | Store | Del
+        Load | Store
 
     boolop = 
         And | Or
