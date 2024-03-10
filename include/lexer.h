@@ -8,7 +8,7 @@
 namespace yapvm {
 
 
-enum TokenType {
+enum TokenKind {
     // IO
     PRINT,
 
@@ -98,22 +98,22 @@ enum TokenType {
 };
 
 
-std::string to_string(TokenType tt);
+std::string to_string(TokenKind tt);
 
 
 class Token {
     std::string lexeme_;
-    TokenType kind_;
+    TokenKind kind_;
     size_t line_;
 
 public:
     Token();
 
-    Token(const std::string &lexeme, TokenType kind, size_t line);
+    Token(const std::string &lexeme, TokenKind kind, size_t line);
 
     const std::string &lexeme() const;
     
-    TokenType kind() const;
+    TokenKind kind() const;
 
     size_t line() const;
 

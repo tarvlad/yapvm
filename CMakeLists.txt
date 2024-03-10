@@ -17,6 +17,9 @@ set(SOURCE_ALL
 
     include/utils.h
     src/utils.cpp
+
+    include/ast.h
+    src/ast.cpp
 )
 
 

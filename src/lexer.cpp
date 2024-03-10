@@ -12,7 +12,7 @@ Token::Token()
     : lexeme_{}, kind_{ ERROR }, line_{ SIZE_MAX } {}
 
 
-Token::Token(const std::string &lexeme, TokenType kind, size_t line)
+Token::Token(const std::string &lexeme, TokenKind kind, size_t line)
     : lexeme_{ lexeme }, kind_{ kind }, line_{ line } {}
 
 
@@ -21,7 +21,7 @@ const std::string &Token::lexeme() const {
 }
 
 
-TokenType Token::kind() const {
+TokenKind Token::kind() const {
     return kind_;
 }
 
@@ -253,7 +253,7 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
 
     assert(source.find('\t') == std::string::npos);
     assert(source.find('\r') == std::string::npos);
-
+    
     size_t line_start = 0;
     size_t pos = 0;
 
@@ -329,7 +329,7 @@ std::vector<Token> yapvm::tokenize(const std::string &source) {
         }
 
         std::string lexeme;
-        TokenType kind = ERROR;
+        TokenKind kind = ERROR;
 
         switch (source[pos]) {
         case '+':
@@ -563,7 +563,7 @@ bool yapvm::operator==(const Token &l, const Token &r) {
 }
 
 
-std::string yapvm::to_string(TokenType tt) {
+std::string yapvm::to_string(TokenKind tt) {
     switch (tt) {
     case PRINT:
         return "PRINT";
