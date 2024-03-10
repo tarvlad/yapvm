@@ -13,6 +13,7 @@ yet another python virtual machine
 * No exceptions
 * Threads
 * No GIL
+* Currently no class inheritance
 
 ## Stages
 ### 01.04.2024

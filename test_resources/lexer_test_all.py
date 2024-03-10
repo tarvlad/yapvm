@@ -47,7 +47,7 @@ if (a == b):
 
 a.b.c.d.e.f._foo(bar.baz(), 42)
 
-e.f._fo__fff000({}, [], {3: 4, "str": 'psi'}, [4, 5, 6])
+_f9__.__fff000
 
 42;
 
@@ -58,6 +58,6 @@ e &= 3
 f |= g
 3 ^ 4 ** 5
 
-{ (foo, bar, baz) : 3,
-  (foo, bar, test) : 4}
+{ (FOO, bar, baz) : 3,
+  [foo, bar, test] : 4}
 
