@@ -1,33 +1,30 @@
 #include "ast.h"
 
+
 using namespace yapvm::ast;
 
 
-CmpOpKind yapvm::ast::Eq::kind() const {
-    return EQ;
+yapvm::ast::BoolOp::BoolOp(BoolOpKind op, std::span<Expr *> values)
+    : op_{ op }, values_{ values } {
 }
 
 
-CmpOpKind yapvm::ast::NotEq::kind() const {
-    return NOT_EQ;
+yapvm::ast::BoolOp::~BoolOp() {
+    for (Expr *e : values_) {
+        if (e != nullptr) {
+            delete e;
+        }
+    }
+
+    delete[] values_.data();
 }
 
 
-CmpOpKind yapvm::ast::Lt::kind() const {
-    return LT;
+BoolOpKind yapvm::ast::BoolOp::op() const {
+    return op_;
 }
 
 
-CmpOpKind yapvm::ast::LtE::kind() const {
-    return LTE;
-}
-
-
-CmpOpKind yapvm::ast::Gt::kind() const {
-    return GT;
-}
-
-
-CmpOpKind yapvm::ast::GtE::kind() const {
-    return GTE;
+const std::span<Expr *> &yapvm::ast::BoolOp::values() const {
+    return values_;
 }

@@ -6,7 +6,5 @@ int main(int argc, char **argv) {
         std::print("Please specify input file name");
     }
 
-
-
     return 0;
 }

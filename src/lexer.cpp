@@ -706,4 +706,6 @@ std::string yapvm::lexer::to_string(TokenKind tt) {
     default:
         assert(false);
     }
+    assert(false);
+    return "";
 }
