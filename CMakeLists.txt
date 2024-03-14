@@ -20,6 +20,9 @@ set(SOURCE_ALL
 
     include/ast.h
     src/ast.cpp
+
+    include/y_objects.h
+    src/y_objects.cpp
 )
 
 
