@@ -32,8 +32,8 @@ class GtE : public CmpOpKind {};
 
 class UnaryOpKind : public Node {};
 
-class Invert : public Node {};
-class Not : public Node {};
+class Invert : public UnaryOpKind {};
+class Not : public UnaryOpKind {};
 
 
 class OperatorKind : public Node {};
@@ -342,9 +342,6 @@ public:
 class Pass : public Stmt {};
 class Break : public Stmt {};
 class Continue : public Stmt {};
-
-
-Node generate_ast(const std::vector<Token> &tokens);
 
 
 } // namespace ast

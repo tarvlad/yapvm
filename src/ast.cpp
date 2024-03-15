@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "utils.h"
 
 
 using namespace yapvm::ast;
@@ -503,9 +504,4 @@ yapvm::ast::ExprStmt::~ExprStmt() {
 
 Expr *yapvm::ast::ExprStmt::value() const {
     return value_;
-}
-
-
-Node yapvm::ast::generate_ast(const std::vector<Token> &tokens) {
-    return {}; //TODO
 }
