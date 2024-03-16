@@ -37,10 +37,20 @@ add_executable(yapvm_lexer_test
     ${SOURCE_ALL}
 )
 
+add_executable(yapvm_parser_test
+    test/parser_test.cpp
+    ${SOURCE_ALL}
+)
+
 enable_testing()
 
 add_test(
     NAME yapvm_lexer_test
     COMMAND yapvm_lexer_test 
+)
+
+add_test(
+    NAME yapvm_parser_test
+    COMMAND yapvm_parser_test
 )
 
