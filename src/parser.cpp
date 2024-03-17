@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "ast.h"
 #include "utils.h"
+#include <cassert>
 
 using namespace yapvm::parser;
 using namespace yapvm;
@@ -258,13 +259,58 @@ Dict *try_parse_dict(const std::vector<Token> &tokens, size_t &pos) {
     std::vector<Expr *> keys;
     std::vector<Expr *> values;
     
-    pos = prev_pos;
     keys.push_back(k);
     values.push_back(v);
+    assert(tokens[pos].kind() == COMMA);
+
+    auto cleanup_kv = [&keys, &values] { 
+        for (Expr *k : keys) { 
+            delete k; 
+        } 
+        for (Expr *v : values) { 
+            delete v; 
+        } 
+    };
     while (1) {
-        
+        pos++; // skip comma
+        k = try_parse_expr(tokens, pos);
+        if (k == nullptr) {
+            pos = prev_pos;
+            cleanup_kv();
+            return nullptr;
+        }
+        if (tokens[pos].kind() != COLON) {
+            pos = prev_pos;
+            cleanup_kv();
+            return nullptr;
+        }
+        pos++;
+        v = try_parse_expr(tokens, pos);
+        if (v == nullptr) {
+            pos = prev_pos;
+            cleanup_kv();
+            return nullptr;
+        }
+        keys.push_back(k);
+        values.push_back(v);
+        if (tokens[pos].kind() == RIGHT_BRACE) {
+            pos++;
+            break;
+        }
+        if (tokens[pos].kind() != COMMA) {
+            pos = prev_pos;
+            cleanup_kv();
+            return nullptr;
+        }
     }
-    //TODO
+    std::span<Expr *> keys_s = { new Expr * [keys.size()], keys.size() };
+    std::span<Expr *> values_s = { new Expr * [values.size()], values.size() };
+    assert(keys_s.size() == values_s.size());
+    for (size_t i = 0; i < keys_s.size(); i++) {
+        keys_s[i] = keys[i];
+        values_s[i] = values[i];
+    }
+    return new Dict{ keys_s, values_s };
 }
 
 
@@ -317,12 +363,14 @@ OperatorKind *try_parse_operator_kind(const std::vector<Token> &tokens, size_t &
 }
 
 
+//TODO add spec
 static
 Expr *try_parse_expr(const std::vector<Token> &tokens, size_t &pos) {
     //TODO start from names and etc
 }
 
 
+//TODO add spec
 static
 Node *parse_node(const std::vector<Token> &tokens, size_t &pos) {
     //TODO
@@ -335,7 +383,7 @@ std::vector<Node *> yapvm::parser::generate_ast(const std::vector<Token> &tokens
 
     size_t pos = 0;
     while (pos < tokens.size()) {
-        ast.emplace_back(parse_node(tokens, pos));
+        ast.push_back(parse_node(tokens, pos));
     }
 
     return ast;
