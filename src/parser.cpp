@@ -338,6 +338,13 @@ Set *try_parse_set(const std::vector<Token> &tokens, size_t &pos) {
             pos++;
             break;
         }
+        if (tokens[pos].kind() != COMMA) {
+            for (Expr *e : elements) {
+                delete e;
+            }
+            return nullptr;
+        }
+        pos++; // skip comma
         element = try_parse_expr(tokens, pos);
         if (element == nullptr) {
             for (Expr *e : elements) {
