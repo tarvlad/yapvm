@@ -1,7 +1,7 @@
 # YAPVM
 yet another python virtual machine
 
-### Our team
+### Our team (id-s in telegram)
 * @tvldslv
 * @geekysteve
 * @sad_prikol
