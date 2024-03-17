@@ -315,6 +315,44 @@ Dict *try_parse_dict(const std::vector<Token> &tokens, size_t &pos) {
 
 
 /*
+ * Set  ::= LEFT_BRACE Expr (COMMA Expr)* RIGHT_BRACE
+ */
+static 
+Set *try_parse_set(const std::vector<Token> &tokens, size_t &pos) {
+    if (is_there_at_least_n_elements_in<3>(tokens, pos)) {
+        return nullptr;
+    }
+    if (tokens[pos].kind() != RIGHT_BRACE) {
+        return nullptr;
+    }
+    pos++;
+    Expr *element = try_parse_expr(tokens, pos);
+    if (element == nullptr) {
+        return nullptr;
+    }
+    std::vector<Expr *> elements;
+    elements.push_back(element);
+
+    while (1) {
+        if (tokens[pos].kind() == RIGHT_BRACE) {
+            pos++;
+            break;
+        }
+        element = try_parse_expr(tokens, pos);
+        if (element == nullptr) {
+            for (Expr *e : elements) {
+                delete e;
+            }
+            return nullptr;
+        }
+        elements.push_back(element);
+    }
+    std::span<Expr *> elements_s = { new Expr *[elements.size()], elements.size() };
+    return new Set{ elements_s };
+}
+
+
+/*
  * OperatorKind ::= PLUS
  *                  | MINUS
  *                  | ASTERISK
