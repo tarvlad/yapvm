@@ -23,9 +23,8 @@ Really bad. Project in proof of concept stage
 ### 01.04.2024
 * Basic objects representation
 * Internal data sturcutres - dicts, lists and vice versa
-* All basic interfaces (GC, threads, bytecode instructions interfaces)
-* Parser
-* Interpreter inner things such as functions lookup and smth like this
+* All basic interfaces (GC, threads)
+* Interpreter inner things (parser)
 
 ### 29.04.2024
 * Scope
