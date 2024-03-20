@@ -695,8 +695,6 @@ std::string yapvm::lexer::to_string(TokenKind tt) {
         return "INT";
     case FLOAT:
         return "FLOAT";
-    case NAME:
-        return "NAME";
     case STRING:
         return "STRING";
     case IDENTIFIER:

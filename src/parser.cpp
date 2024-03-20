@@ -1,7 +1,10 @@
 #include "parser.h"
 #include "ast.h"
+#include "lexer.h"
 #include "utils.h"
+#include "y_objects.h"
 #include <cassert>
+#include <cstddef>
 
 using namespace yapvm::parser;
 using namespace yapvm;
@@ -39,6 +42,7 @@ CmpOpKind *try_parse_cmp_op_kind(const std::vector<Token> &tokens, size_t &pos) 
     case GREATER_EQUAL:
         pos++;
         return new GtE{};
+    default:
     }
     return nullptr;
 }
@@ -59,6 +63,7 @@ UnaryOpKind *try_parse_unary_op_kind(const std::vector<Token> &tokens, size_t &p
     case BANG:
         pos++;
         return new Not{};
+    default:
     }
     return nullptr;
 }
@@ -79,6 +84,7 @@ BoolOpKind *try_parse_bool_op_kind(const std::vector<Token> &tokens, size_t &pos
     case OR:
         pos++;
         return new Or{};
+    default:
     }
     return nullptr;
 }
@@ -319,7 +325,7 @@ Dict *try_parse_dict(const std::vector<Token> &tokens, size_t &pos) {
  */
 static 
 Set *try_parse_set(const std::vector<Token> &tokens, size_t &pos) {
-    if (is_there_at_least_n_elements_in<3>(tokens, pos)) {
+    if (!is_there_at_least_n_elements_in<3>(tokens, pos)) {
         return nullptr;
     }
     if (tokens[pos].kind() != RIGHT_BRACE) {
@@ -356,6 +362,390 @@ Set *try_parse_set(const std::vector<Token> &tokens, size_t &pos) {
     }
     std::span<Expr *> elements_s = { new Expr *[elements.size()], elements.size() };
     return new Set{ elements_s };
+}
+
+
+template <typename T>
+static
+void cleanup_span(std::span<T> elements) {
+    for (T e : elements) {
+        delete e;
+    }
+}
+
+
+/*
+ * Compare  ::= Expr CmpOpKind Expr (CmpOpKind Expr)*
+ */
+static
+Compare *try_parse_compare(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<3>(tokens, pos)) {
+        return nullptr;
+    }
+    size_t prev_pos = pos;
+    
+    Expr *left = try_parse_expr(tokens, pos);
+    if (left == nullptr) {
+        pos = prev_pos;
+        return nullptr;
+    }
+
+    CmpOpKind *op = try_parse_cmp_op_kind(tokens, pos);
+    if (op == nullptr) {
+        pos = prev_pos;
+        delete left;
+        return nullptr;
+    }
+
+    Expr *comparator = try_parse_expr(tokens, pos);
+    if (comparator == nullptr) {
+        pos = prev_pos;
+        delete left;
+        delete op;
+        return nullptr;
+    }
+
+    std::vector<CmpOpKind *> ops;
+    std::vector<Expr *> comparators;
+    ops.push_back(op);
+    comparators.push_back(comparator);
+
+    prev_pos = pos;
+    while (1) {
+        op = try_parse_cmp_op_kind(tokens, pos);
+        if (op == nullptr) {
+            break;
+        }
+
+        comparator = try_parse_expr(tokens, pos);
+        if (comparator == nullptr) {
+            delete op;
+            pos = prev_pos;
+            break;
+        }
+
+        ops.push_back(op);
+        comparators.push_back(comparator);
+        prev_pos = pos;
+    }
+
+    std::span<CmpOpKind> ops_s = { new CmpOpKind[ops.size()], ops.size() };
+    for (size_t i = 0; i < ops.size(); i++) {
+        ops_s[i] = *ops[i];
+    }
+    for (size_t i = 0; i < ops.size(); i++) {
+        delete ops[i];
+    }
+
+    std::span<Expr *> comparators_s = { new Expr *[comparators.size()], comparators.size() };
+    for (size_t i = 0; i < comparators.size(); i++) {
+        comparators_s[i] = comparators[i];
+    }
+
+    return new Compare{ left, ops_s, comparators_s };
+}
+
+
+/*
+ * Call ::= Expr LEFT_PAREN (Expr (COMMA Expr)*)? RIGHT_PAREN
+ */
+static 
+Call *try_parse_call(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<3>(tokens, pos)) {
+        return nullptr;
+    }
+    size_t prev_pos = pos;
+
+    Expr *func = try_parse_expr(tokens, pos);
+    if (func == nullptr) {
+        pos = prev_pos;
+        return nullptr;
+    }
+
+    if (tokens[pos].kind() != LEFT_PAREN) {
+        pos = prev_pos;
+        delete func;
+        return nullptr;
+    }
+    pos++;
+
+    std::span<Expr *> args_s;
+    if (tokens[pos].kind() != RIGHT_PAREN) {
+        Expr *arg = try_parse_expr(tokens, pos);
+        if (arg == nullptr) {
+            delete func;
+            pos = prev_pos;
+            return nullptr;
+        }
+        std::vector<Expr *> args;
+        args.push_back(arg);
+
+        while (1) {
+            if (tokens[pos].kind() != COMMA) {
+                break;       
+            }
+            pos++; // skip comma
+            arg = try_parse_expr(tokens, pos);
+            if (arg == nullptr) {
+                cleanup_span<Expr *>({ args.data(), args.size() });
+                delete func;
+                pos = prev_pos;
+                return nullptr;
+            }
+            args.push_back(arg);
+        }
+        if (tokens[pos].kind() != RIGHT_PAREN) {
+            delete func;
+            cleanup_span<Expr *>({ args.data(), args.size() });
+            pos = prev_pos;
+            return nullptr;
+        }
+
+        args_s = { new Expr *[args.size()], args.size() };
+        for (size_t i = 0; i < args.size(); i++) {
+            args_s[i] = args[i];
+        }
+    }
+    assert(tokens[pos].kind() == RIGHT_PAREN);
+    pos++;
+    
+    return new Call{ func, args_s };
+}
+
+
+/*
+ * Constant ::= INT | FLOAT | STRING | TRUE | FALSE | NONE
+ */
+static
+Constant *try_parse_constant(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<1>(tokens, pos)) {
+        return nullptr;
+    }
+
+    switch (tokens[pos].kind()) {
+    case NONE:
+        pos++;
+        return new Constant{ new YNoneObject };
+    case TRUE:
+        pos++;
+        return new Constant{ new YBoolObject{ true } };   
+    case FALSE:
+        pos++;
+        return new Constant{ new YBoolObject{ false } };
+    case STRING:
+        return new Constant{ new YStringObject{ tokens[pos++].lexeme() } };
+    case FLOAT:
+        return new Constant{ new YFloatObject{ from_str<double>(tokens[pos++].lexeme()) } };
+    case INT:
+        return new Constant{ new YIntObject{ from_str<ssize_t>(tokens[pos++].lexeme()) } };
+    default:
+    }
+    return nullptr;
+}
+
+
+/*
+ * Attribute    ::= Expr DOT IDENTIFIER
+ */
+static
+Attribute *try_parse_attribute(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<3>(tokens, pos)) {
+        return nullptr;
+    }
+    size_t prev_pos = pos;
+
+    Expr *value = try_parse_expr(tokens, pos);
+    if (value == nullptr) {
+        return nullptr;
+    }
+
+    if (tokens[pos].kind() != DOT) {
+        delete value;
+        pos = prev_pos;
+        return nullptr;
+    }
+    pos++;
+
+    if (tokens[pos].kind() != IDENTIFIER) {
+        delete value;
+        pos = prev_pos;
+        return nullptr;
+    }
+    std::string attr = tokens[pos++].lexeme();
+
+    return new Attribute{ value, attr, UndefinedContext{} };   
+}
+
+
+/*
+ * Subscript    ::= Expr LEFT_SQ_BRACE Expr RIGHT_SQ_BRACE
+ */
+static
+Subscript *try_parse_subscript(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<4>(tokens, pos)) {
+        return nullptr;
+    }
+    size_t prev_pos = pos;
+
+    Expr *value = try_parse_expr(tokens, pos);
+    if (value == nullptr) {
+        return nullptr;
+    }
+
+    if (tokens[pos].kind() != LEFT_SQ_BRACE) {
+        delete value;
+        pos = prev_pos;
+        return nullptr;
+    }
+    pos++;
+
+    Expr *key = try_parse_expr(tokens, pos);
+    if (key == nullptr) {
+        delete value;
+        pos = prev_pos;
+        return nullptr;
+    }
+
+    if (tokens[pos].kind() != RIGHT_SQ_BRACE) {
+        delete value;
+        pos = prev_pos;
+        return nullptr;
+    }
+    pos++;
+
+    return new Subscript{ value, key, UndefinedContext{} };
+}
+
+
+/*
+ * Name ::= IDENTIFIER
+ */
+static
+Name *try_parse_name(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<1>(tokens, pos)) {
+        return nullptr;
+    }
+
+    if (tokens[pos].kind() != IDENTIFIER) {
+        return nullptr;
+    }
+
+    return new Name{ tokens[pos++].lexeme(), UndefinedContext{} };
+}
+
+
+/*
+ * List ::= LEFT_SQ_BRACE (Expr (COMMA Expr)*)? RIGHT_SQ_BRACE
+ */
+static
+List *try_parse_list(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<2>(tokens, pos)) {
+        return nullptr;
+    }
+    size_t prev_pos = pos;
+
+    if (tokens[pos].kind() != LEFT_SQ_BRACE) {
+        return nullptr;
+    }
+    pos++;
+
+    std::span<Expr *> elts_s = {};
+    if (tokens[pos].kind() != RIGHT_SQ_BRACE) {
+        Expr *value = try_parse_expr(tokens, pos);
+        if (value == nullptr) {
+            pos = prev_pos;
+            return nullptr;
+        }
+        std::vector<Expr *> elts;
+        elts.push_back(value);
+
+        if (tokens[pos].kind() == COMMA) {
+            while (1) {
+                pos++; //skip comma
+                value = try_parse_expr(tokens, pos);
+                if (value == nullptr) {
+                    cleanup_span<Expr *>({ elts.data(), elts.size() });
+                    pos = prev_pos;
+                    return nullptr;
+                }
+                elts.push_back(value);
+                if (tokens[pos].kind() != COMMA) {
+                    break;
+                }
+            }
+        }
+        if (tokens[pos].kind() != RIGHT_SQ_BRACE) {
+            cleanup_span<Expr *>({ elts.data(), elts.size() });
+            pos = prev_pos;
+            return nullptr;
+        }
+        elts_s = { new Expr *[elts.size()], elts.size() };
+        for (size_t i = 0; i < elts.size(); i++) {
+            elts_s[i] = elts[i];
+        }
+    }
+    assert(tokens[pos].kind() == RIGHT_SQ_BRACE);
+    pos++;
+
+    return new List{ elts_s, UndefinedContext{} };
+}
+
+
+
+/*
+ * Tuple ::= LEFT_PAREN (Expr (COMMA Expr)*)? RIGHT_PAREN
+ */
+static
+Tuple *try_parse_tuple(const std::vector<Token> &tokens, size_t &pos) {
+    if (!is_there_at_least_n_elements_in<2>(tokens, pos)) {
+        return nullptr;
+    }
+    size_t prev_pos = pos;
+
+    if (tokens[pos].kind() != LEFT_PAREN) {
+        return nullptr;
+    }
+    pos++;
+
+    std::span<Expr *> elts_s = {};
+    if (tokens[pos].kind() != RIGHT_PAREN) {
+        Expr *value = try_parse_expr(tokens, pos);
+        if (value == nullptr) {
+            pos = prev_pos;
+            return nullptr;
+        }
+        std::vector<Expr *> elts;
+        elts.push_back(value);
+
+        if (tokens[pos].kind() == COMMA) {
+            while (1) {
+                pos++; //skip comma
+                value = try_parse_expr(tokens, pos);
+                if (value == nullptr) {
+                    cleanup_span<Expr *>({ elts.data(), elts.size() });
+                    pos = prev_pos;
+                    return nullptr;
+                }
+                elts.push_back(value);
+                if (tokens[pos].kind() != COMMA) {
+                    break;
+                }
+            }
+        }
+        if (tokens[pos].kind() != RIGHT_PAREN) {
+            cleanup_span<Expr *>({ elts.data(), elts.size() });
+            pos = prev_pos;
+            return nullptr;
+        }
+        elts_s = { new Expr *[elts.size()], elts.size() };
+        for (size_t i = 0; i < elts.size(); i++) {
+            elts_s[i] = elts[i];
+        }
+    }
+    assert(tokens[pos].kind() == RIGHT_PAREN);
+    pos++;
+    
+    return new Tuple{ elts_s, UndefinedContext{} };
 }
 
 
@@ -403,6 +793,7 @@ OperatorKind *try_parse_operator_kind(const std::vector<Token> &tokens, size_t &
         return new BitAnd{};
     case DOUBLE_SLASH:
         return new FloorDiv{};
+    default:
     }
     return nullptr;
 }
@@ -412,6 +803,7 @@ OperatorKind *try_parse_operator_kind(const std::vector<Token> &tokens, size_t &
 static
 Expr *try_parse_expr(const std::vector<Token> &tokens, size_t &pos) {
     //TODO start from names and etc
+    return nullptr; // tmp
 }
 
 

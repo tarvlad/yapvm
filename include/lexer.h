@@ -90,7 +90,7 @@ enum TokenKind {
     END_OF_FILE,
 
     // LITERALS
-    INT, FLOAT, NAME, STRING,
+    INT, FLOAT, STRING,
 
     IDENTIFIER,
 

@@ -1,6 +1,10 @@
 # YAPVM
 yet another python virtual machine
 
+## Spoiler
+Currently code quality and performance are bad. 
+Really bad. Project in proof of concept stage
+
 ### Our team (id-s in telegram)
 * @tvldslv
 * @geekysteve

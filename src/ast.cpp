@@ -1,5 +1,5 @@
 #include "ast.h"
-#include "utils.h"
+#include "y_objects.h"
 
 
 using namespace yapvm::ast;
@@ -172,7 +172,7 @@ const std::span<Expr *> &yapvm::ast::Call::args() const {
 }
 
 
-yapvm::ast::Constant::Constant(YObject *value) 
+yapvm::ast::Constant::Constant(YPrimitiveObject *value) 
     : value_{ value } {
 }
 
@@ -182,7 +182,7 @@ yapvm::ast::Constant::~Constant() {
 }
 
 
-YObject *yapvm::ast::Constant::value() const {
+YPrimitiveObject *yapvm::ast::Constant::value() const {
     return value_;
 }
 

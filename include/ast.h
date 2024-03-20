@@ -62,7 +62,7 @@ class ExprContext : public Node {};
 
 class Load : public ExprContext {};
 class Store : public ExprContext {};
-
+class UndefinedContext : public ExprContext {}; // crutch
 
 class Expr : public Node {};
 
@@ -156,13 +156,13 @@ public:
 
 
 class Constant : public Expr {
-    YObject *value_;
+    YPrimitiveObject *value_;
 
 public:
-    Constant(YObject *value);
+    Constant(YPrimitiveObject *value);
     ~Constant();
 
-    YObject *value() const;
+    YPrimitiveObject *value() const;
 };
 
 

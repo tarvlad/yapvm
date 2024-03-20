@@ -15,3 +15,5 @@ std::string yapvm::read_file(const std::string &s) {
     buffer << t.rdbuf();
     return buffer.str();
 }
+
+
