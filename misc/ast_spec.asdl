@@ -16,7 +16,7 @@ module yapvm {
             expr? value
         )
         | Assign(
-            expr *targets, 
+            expr target, 
             expr value
         )
         | AugAssign(
@@ -54,13 +54,6 @@ module yapvm {
             unaryop op,
             expr operand
         )
-        | Dict(
-            expr *keys,
-            expr *values
-        )
-        | Set(
-            expr *elts
-        )
         | Compare(
             expr left,
             cmpop *ops,
@@ -75,29 +68,17 @@ module yapvm {
         )
         | Attribute(
             expr value, 
-            identifier attr,
-            expr_context ctx
+            identifier attr
         )
         | Subscript(
             expr value,
-            expr key,
-            expr_context ctx
+            expr key
         )
         | Name(
-            identifier id,
-            expr_context ctx
+            identifier id
         )
-        | List(
-            expr *elts,
-            expr_context ctx
-        )
-        | Tuple(
-            expr *elts,
-            expr_context ctx
-        )
-
-    expr_context = 
-        Load | Store
+        | List
+        | Dict
 
     boolop = 
         And | Or
