@@ -77,52 +77,6 @@ Expr *yapvm::ast::UnaryOp::operand() const {
 }
 
 
-yapvm::ast::Dict::Dict(std::span<Expr *> keys, std::span<Expr *> values) 
-    : keys_{ keys }, values_{ values } {
-}
-
-
-yapvm::ast::Dict::~Dict() {
-    for (Expr *e : keys_) {
-        delete e;
-    }
-    delete[] keys_.data();
-
-    for (Expr *e : values_) {
-        delete e;
-    }
-    delete[] values_.data();
-}
-
-
-const std::span<Expr *> &yapvm::ast::Dict::keys() const {
-    return keys_;
-}
-
-
-const std::span<Expr *> &yapvm::ast::Dict::values() const {
-    return values_;
-}
-
-
-yapvm::ast::Set::Set(std::span<Expr *> elts) 
-    :elts_{ elts } {
-}
-
-
-yapvm::ast::Set::~Set() {
-    for (Expr *e : elts_) {
-        delete e;
-    }
-    delete[] elts_.data();
-}
-
-
-const std::span<Expr *> &yapvm::ast::Set::elts() {
-    return elts_;
-}
-
-
 yapvm::ast::Compare::Compare(Expr *left, std::span<CmpOpKind> ops, std::span<Expr *> comparators) 
     : left_{ left }, ops_{ ops }, comparators_{ comparators } {
 }
@@ -187,8 +141,8 @@ YPrimitiveObject *yapvm::ast::Constant::value() const {
 }
 
 
-yapvm::ast::Attribute::Attribute(Expr *value, const std::string &attr, ExprContext ctx)
-    : value_{ value }, attr_{ attr }, ctx_{ ctx } {
+yapvm::ast::Attribute::Attribute(Expr *value, const std::string &attr)
+    : value_{ value }, attr_{ attr } {
 }
 
 
@@ -207,13 +161,8 @@ const std::string &yapvm::ast::Attribute::attr() const {
 }
 
 
-ExprContext yapvm::ast::Attribute::ctx() const {
-    return ctx_;
-}
-
-
-yapvm::ast::Subscript::Subscript(Expr *value, Expr *key, ExprContext ctx)
-    : key_{ key }, value_{ value }, ctx_{ ctx } {
+yapvm::ast::Subscript::Subscript(Expr *value, Expr *key)
+    : key_{ key }, value_{ value } {
 }
 
 
@@ -233,69 +182,13 @@ Expr *yapvm::ast::Subscript::value() const {
 }
 
 
-ExprContext yapvm::ast::Subscript::ctx() const {
-    return ctx_;
-}
-
-
-yapvm::ast::Name::Name(const std::string &id, ExprContext ctx)
-    : id_{ id }, ctx_{ ctx } {
+yapvm::ast::Name::Name(const std::string &id)
+    : id_{ id } {
 }
 
 
 const std::string &yapvm::ast::Name::id() const {
     return id_;
-}
-
-
-ExprContext yapvm::ast::Name::ctx() const {
-    return ctx_;
-}
-
-
-yapvm::ast::List::List(std::span<Expr *> elts, ExprContext ctx) 
-    : elts_{ elts }, ctx_{ ctx } {
-}
-
-
-yapvm::ast::List::~List() {
-    for (Expr *e : elts_) {
-        delete e; 
-    }
-    delete[] elts_.data();
-}
-
-
-const std::span<Expr *> &yapvm::ast::List::elts() const {
-    return elts_;
-}
-
-
-ExprContext yapvm::ast::List::ctx() const {
-    return ctx_;
-}
-
-
-yapvm::ast::Tuple::Tuple(std::span<Expr *> elts, ExprContext ctx) 
-    : elts_{ elts }, ctx_{ ctx } {
-}
-
-
-yapvm::ast::Tuple::~Tuple() {
-    for (Expr *e : elts_) {
-        delete e;
-    }
-    delete[] elts_.data();
-}
-
-
-const std::span<Expr *> &yapvm::ast::Tuple::elts() const {
-    return elts_;
-}
-
-
-ExprContext yapvm::ast::Tuple::ctx() const {
-    return ctx_;
 }
 
 
@@ -385,22 +278,19 @@ Expr *yapvm::ast::Return::value() const {
 }
 
 
-yapvm::ast::Assign::Assign(std::span<Expr *> targets, Expr *value)
-    : targets_{ targets }, value_{ value } {
+yapvm::ast::Assign::Assign(Expr *target, Expr *value)
+    : target_{ target }, value_{ value } {
 }
 
 
 yapvm::ast::Assign::~Assign() {
-    for (Expr *s : targets_) {
-        delete s;
-    }
-    delete[] targets_.data();
+    delete target_;
     delete value_;
 }
 
 
-const std::span<Expr *> yapvm::ast::Assign::targets() const {
-    return targets_;
+Expr *yapvm::ast::Assign::target() const {
+    return target_;
 }
 
 

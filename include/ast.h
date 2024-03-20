@@ -58,12 +58,6 @@ class And : public BoolOpKind {};
 class Or : public BoolOpKind {};
 
 
-class ExprContext : public Node {};
-
-class Load : public ExprContext {};
-class Store : public ExprContext {};
-class UndefinedContext : public ExprContext {}; // crutch
-
 class Expr : public Node {};
 
 class BoolOp : public Expr {
@@ -103,30 +97,6 @@ public:
     UnaryOpKind op() const;
     Expr *operand() const;
 };
-
-class Dict : public Expr {
-    std::span<Expr *> keys_;
-    std::span<Expr *> values_;
-
-public:
-    Dict(std::span<Expr *> keys, std::span<Expr *> values);
-    ~Dict();
-
-    const std::span<Expr *> &keys() const;
-    const std::span<Expr *> &values() const;
-};
-
-
-class Set : public Expr {
-    std::span<Expr *> elts_;
-
-public:
-    Set(std::span<Expr *> elts);
-    ~Set();
-
-    const std::span<Expr *> &elts();
-};
-
 
 class Compare : public Expr {
     Expr *left_;
@@ -169,69 +139,40 @@ public:
 class Attribute : public Expr {
     Expr *value_;
     std::string attr_;
-    ExprContext ctx_;
 
 public:
-    Attribute(Expr *value, const std::string &attr, ExprContext ctx);
+    Attribute(Expr *value, const std::string &attr);
     ~Attribute();
 
     Expr *value() const;
     const std::string &attr() const;
-    ExprContext ctx() const;
 };
 
 
 class Subscript : public Expr {
     Expr *value_;
     Expr *key_;
-    ExprContext ctx_;
 
 public:
-    Subscript(Expr *value, Expr *key, ExprContext ctx);
+    Subscript(Expr *value, Expr *key);
     ~Subscript();
 
     Expr *key() const;
     Expr *value() const;
-    ExprContext ctx() const;
 };
 
 
 class Name : public Expr {
     std::string id_;
-    ExprContext ctx_;
 
 public:
-    Name(const std::string &id, ExprContext ctx);
+    Name(const std::string &id);
 
     const std::string &id() const;
-    ExprContext ctx() const;
 };
 
-
-class List : public Expr {
-    std::span<Expr *> elts_;
-    ExprContext ctx_;
-
-public:
-    List(std::span<Expr *> elts, ExprContext ctx);
-    ~List();
-
-    const std::span<Expr *> &elts() const;
-    ExprContext ctx() const;
-};
-
-
-class Tuple : public Expr {
-    std::span<Expr *> elts_;
-    ExprContext ctx_;
-
-public:
-    Tuple(std::span<Expr *> elts, ExprContext ctx);
-    ~Tuple();
-
-    const std::span<Expr *> &elts() const;
-    ExprContext ctx() const;
-};
+class List : public Expr {};
+class Dict : public Expr {};
 
 
 class Stmt : public Node {};
@@ -278,14 +219,14 @@ public:
 };
 
 class Assign : public Stmt {
-    std::span<Expr *> targets_;
+    Expr *target_;
     Expr *value_;
 
 public:
-    Assign(std::span<Expr *> targets, Expr *value);
+    Assign(Expr *target, Expr *value);
     ~Assign();
 
-    const std::span<Expr *> targets() const;
+    Expr *target() const;
     Expr *value() const;
 };
 
