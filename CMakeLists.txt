@@ -12,9 +12,6 @@ set(SOURCE_ALL
     include/parser.h
     src/parser.cpp
 
-    include/lexer.h
-    src/lexer.cpp
-
     include/utils.h
     src/utils.cpp
 
@@ -28,12 +25,6 @@ set(SOURCE_ALL
 
 add_executable(yapvm 
     src/main.cpp
-    ${SOURCE_ALL}
-)
-
-
-add_executable(yapvm_lexer_test
-    test/lexer_test.cpp
     ${SOURCE_ALL}
 )
 

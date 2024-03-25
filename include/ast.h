@@ -5,14 +5,12 @@
 #include "y_objects.h"
 #include <string>
 #include <vector>
-#include "lexer.h"
 
 
 namespace yapvm {
 namespace ast {
 
 using namespace yapvm::yobjects;
-using namespace yapvm::lexer;
 
 class Node {
 public:

@@ -1,5 +1,5 @@
 module yapvm {
-    mod = Module(identifier name, stmt *body)
+    mod = Module(stmt *body)
 
     stmt = 
         FunctionDef(
