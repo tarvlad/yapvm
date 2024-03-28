@@ -17,7 +17,6 @@ public:
     virtual ~Node() = default;
 };
 
-
 class CmpOpKind : public Node {};
 
 class Eq : public CmpOpKind {};
@@ -174,6 +173,18 @@ class Dict : public Expr {};
 
 
 class Stmt : public Node {};
+
+
+class Module : public Node {
+    std::span<Stmt *> body_;
+    
+public:
+    Module(std::span<Stmt *> body);
+    ~Module();
+
+    const std::span<Stmt *> &body() const;
+};
+
 
 class FunctionDef : public Stmt {
     std::string name_;

@@ -395,3 +395,17 @@ yapvm::ast::ExprStmt::~ExprStmt() {
 Expr *yapvm::ast::ExprStmt::value() const {
     return value_;
 }
+
+
+yapvm::ast::Module::Module(std::span<Stmt *> body) 
+    : body_{ body } {}
+
+
+yapvm::ast::Module::~Module() {
+    delete[] body_.data();
+}
+
+
+const std::span<Stmt *> &yapvm::ast::Module::body() const {
+    return body_;
+}
