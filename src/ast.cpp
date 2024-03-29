@@ -409,3 +409,11 @@ yapvm::ast::Module::~Module() {
 const std::span<Stmt *> &yapvm::ast::Module::body() const {
     return body_;
 }
+
+
+yapvm::ast::Import::Import(const std::string &name) : name_{ name }{}
+
+
+const std::string &yapvm::ast::Import::name() const {
+    return name_;
+}

@@ -175,7 +175,7 @@ class Dict : public Expr {};
 class Stmt : public Node {};
 
 
-class Module : public Node {
+class Module : public Stmt {
     std::span<Stmt *> body_;
     
 public:
@@ -183,6 +183,16 @@ public:
     ~Module();
 
     const std::span<Stmt *> &body() const;
+};
+
+
+class Import : public Stmt {
+    std::string name_;
+
+public:
+    Import(const std::string &name);
+
+    const std::string &name() const;
 };
 
 

@@ -2,6 +2,10 @@ module yapvm {
     mod = Module(stmt *body)
 
     stmt = 
+        Import(
+            identifer name
+        )
+        |
         FunctionDef(
             identifier name,
             identifier *args,

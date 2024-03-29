@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "ast.h"
 #include <stdexcept>
+#include <string>
 
 
 using namespace yapvm::parser;
@@ -9,29 +10,33 @@ using namespace yapvm::ast;
 using namespace yapvm;
 
 
+static scoped_ptr<Import> generate_import(const std::string &input, size_t &pos);//TODO
+
+
+static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos); //TODO
+
+
 // currently throws runtime_error, in future need to add custom type for exceptions
 static 
-scoped_ptr<Module> generate_module(const std::string_view &input, size_t &pos) {
-    if (input.substr(pos, pos + 7) != "Module(") {
-        throw std::runtime_error("Expected Module(");
-    }
-    pos += 7;
-    if (input.substr(pos, pos + 6) != "body=[") {
-        throw std::runtime_error("Expected body=[ in begin of module definition");
-    }
-    pos += 6;
-    
-    if (input.substr(pos, pos + 7) == "Import(") {
-        
-    }
+scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
+    auto parse_error = [pos] -> void {
+        throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
+    };
 
-    if (input[pos] != ']') {
-        throw std::runtime_error("Expected end of module body");
-    }
-    pos++;
-    if (input[pos] != ')') {
-        throw std::runtime_error("Expected end of module definition");
-    }
+    check(sstrcmp(input, "Module(", pos))
+        .and_then([&pos] -> void { pos += 7; })
+        .or_else(parse_error);
+    
+    check(sstrcmp(input, "body=[", pos))
+        .and_then([&pos] -> void { pos += 6; })
+        .or_else(parse_error);
+
+
+    //TODO statements
+    
+
+    check(input[pos] == ']').and_then([&pos] -> void { pos++; }).or_else(parse_error);
+    check(input[pos] == ')').or_else(parse_error);
     //TODO return 
     return nullptr; //tmp
 }
