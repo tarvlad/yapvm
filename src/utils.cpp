@@ -2,6 +2,8 @@
 #include <sstream>
 #include <fstream>
 #include <cassert>
+#include <stdexcept>
+#include <string>
 
 using namespace yapvm;
 
@@ -74,4 +76,35 @@ size_t yapvm::cstrsz(const char *str) {
 
 __CheckResObj yapvm::check(bool cond) {
     return __CheckResObj{ cond };
+}
+
+
+std::string extract_delimited_substring(const std::string &str, size_t pos) {
+    char delimiter = str[pos];
+    if (delimiter != '\'' && delimiter != '"') {
+        throw std::invalid_argument("Invalid starting delimiter");
+    }
+
+    bool escaped = false;
+    size_t end_pos = std::string::npos;
+    for (size_t i = pos + 1; i < str.size(); i++) {
+        if (str[i] == '\\') {
+            escaped = !escaped;
+            continue;
+        }
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (str[i] == delimiter) {
+            end_pos = i;
+            break;
+        }
+    }
+    if (end_pos == std::string::npos) {
+        return "";
+    }
+    std::string result = str.substr(pos, end_pos - pos + 1);
+    assert(result[result.size() - 1] == delimiter);     
+    return result;
 }

@@ -236,5 +236,6 @@ public:
 };
 
 
+std::string extract_delimited_substring(const std::string &str, size_t pos);
 
 }

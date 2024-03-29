@@ -13,7 +13,18 @@ using namespace yapvm;
 static scoped_ptr<Import> generate_import(const std::string &input, size_t &pos);//TODO
 
 
-static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos); //TODO
+static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
+    scoped_ptr<Stmt> res;
+    check(sstrcmp(input, "Import(names=[alias(name=", pos))
+        .and_then([&pos] -> void { 
+            pos += sizeof("Import(names=[alias(name=") - 1;
+        })
+        .and_then(
+            [&res] -> void {
+                
+            }
+        );
+}
 
 
 // currently throws runtime_error, in future need to add custom type for exceptions
@@ -24,16 +35,15 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
     };
 
     check(sstrcmp(input, "Module(", pos))
-        .and_then([&pos] -> void { pos += 7; })
+        .and_then([&pos] -> void { pos += sizeof("Module(") - 1; })
         .or_else(parse_error);
     
     check(sstrcmp(input, "body=[", pos))
-        .and_then([&pos] -> void { pos += 6; })
+        .and_then([&pos] -> void { pos += sizeof("body=[") - 1; })
         .or_else(parse_error);
 
 
     //TODO statements
-    
 
     check(input[pos] == ']').and_then([&pos] -> void { pos++; }).or_else(parse_error);
     check(input[pos] == ')').or_else(parse_error);
