@@ -2,7 +2,10 @@
 
 #include <string>
 #include <cstddef>
+#include <cstddef>
 
+static_assert(sizeof(void *) == 8);
+using ssize_t = unsigned long long;
 
 namespace yapvm {
 namespace yobjects {

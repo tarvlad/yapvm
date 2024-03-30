@@ -14,14 +14,14 @@ static scoped_ptr<Import> generate_import(const std::string &input, size_t &pos)
 
 
 static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
-    auto parse_error = [pos] -> void {
+    auto parse_error = [pos] {
         throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
     };    
 
     scoped_ptr<Stmt> res;
     check(sstrcmp(input, "Import(names=[alias(name=", pos))
     .and_then(
-        [&res, &pos, &input, &parse_error] -> void {
+        [&res, &pos, &input, &parse_error] {
             pos += sizeof("Import(names=[alias(name=") - 1;
             std::string name = extract_delimited_substring(input, pos);
             res = new Import{ name };
@@ -29,7 +29,7 @@ static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
             
             check(sstrcmp(input, ")])", pos))
             .and_then(
-                [&pos] -> void {
+                [&pos] {
                     pos += sizeof(")])") - 1;
                 }
             )
@@ -50,22 +50,22 @@ static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
 // currently throws runtime_error, in future need to add custom type for exceptions
 static 
 scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
-    auto parse_error = [pos] -> void {
+    auto parse_error = [pos] {
         throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
     };
 
     check(sstrcmp(input, "Module(", pos))
-        .and_then([&pos] -> void { pos += sizeof("Module(") - 1; })
+        .and_then([&pos] { pos += sizeof("Module(") - 1; })
         .or_else(parse_error);
     
     check(sstrcmp(input, "body=[", pos))
-        .and_then([&pos] -> void { pos += sizeof("body=[") - 1; })
+        .and_then([&pos] { pos += sizeof("body=[") - 1; })
         .or_else(parse_error);
 
 
     //TODO statements
 
-    check(input[pos] == ']').and_then([&pos] -> void { pos++; }).or_else(parse_error);
+    check(input[pos] == ']').and_then([&pos] { pos++; }).or_else(parse_error);
     check(input[pos] == ')').or_else(parse_error);
     //TODO return 
     return nullptr; //tmp
