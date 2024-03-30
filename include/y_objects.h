@@ -5,7 +5,7 @@
 #include <cstddef>
 
 static_assert(sizeof(void *) == 8);
-using ssize_t = unsigned long long;
+using ssize_t = long long;
 
 namespace yapvm {
 namespace yobjects {
