@@ -11,6 +11,9 @@
 
 namespace yapvm {
 
+#define RETURN_IF(PREDICATE, VAL) \
+if (PREDICATE) { return VAL; }
+
 std::string read_file(const std::string &s);
 
 template <size_t N, typename T>

@@ -14,16 +14,36 @@ static scoped_ptr<Import> generate_import(const std::string &input, size_t &pos)
 
 
 static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
+    auto parse_error = [pos] -> void {
+        throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
+    };    
+
     scoped_ptr<Stmt> res;
     check(sstrcmp(input, "Import(names=[alias(name=", pos))
-        .and_then([&pos] -> void { 
+    .and_then(
+        [&res, &pos, &input, &parse_error] -> void {
             pos += sizeof("Import(names=[alias(name=") - 1;
-        })
-        .and_then(
-            [&res] -> void {
-                
-            }
-        );
+            std::string name = extract_delimited_substring(input, pos);
+            res = new Import{ name };
+            pos += name.size() + 2;
+            
+            check(sstrcmp(input, ")])", pos))
+            .and_then(
+                [&pos] -> void {
+                    pos += sizeof(")])") - 1;
+                }
+            )
+            .or_else(
+                parse_error
+            );
+        }
+    );
+    RETURN_IF(res != nullptr, res);
+
+    
+
+    //TODO
+    return nullptr;
 }
 
 

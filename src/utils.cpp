@@ -79,7 +79,7 @@ __CheckResObj yapvm::check(bool cond) {
 }
 
 
-std::string extract_delimited_substring(const std::string &str, size_t pos) {
+std::string yapvm::extract_delimited_substring(const std::string &str, size_t pos) {
     char delimiter = str[pos];
     if (delimiter != '\'' && delimiter != '"') {
         throw std::invalid_argument("Invalid starting delimiter");
@@ -104,7 +104,6 @@ std::string extract_delimited_substring(const std::string &str, size_t pos) {
     if (end_pos == std::string::npos) {
         return "";
     }
-    std::string result = str.substr(pos, end_pos - pos + 1);
-    assert(result[result.size() - 1] == delimiter);     
+    std::string result = str.substr(pos + 1, end_pos - pos + 1 - 1);
     return result;
 }
