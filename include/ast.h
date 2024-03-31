@@ -233,13 +233,13 @@ public:
 };
 
 class Assign : public Stmt {
-    scoped_ptr<Expr> target_;
+    array<scoped_ptr<Expr>> target_;
     scoped_ptr<Expr> value_;
 
 public:
-    Assign(const scoped_ptr<Expr> &target, const scoped_ptr<Expr> &value);
+    Assign(const array<scoped_ptr<Expr>> &target, const scoped_ptr<Expr> &value);
 
-    const scoped_ptr<Expr> &target() const;
+    const array<scoped_ptr<Expr>> &target() const;
     const scoped_ptr<Expr> &value() const;
 };
 

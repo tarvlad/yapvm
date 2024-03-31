@@ -200,12 +200,12 @@ const scoped_ptr<Expr> &yapvm::ast::Return::value() const {
 }
 
 
-yapvm::ast::Assign::Assign(const scoped_ptr<Expr> &target, const scoped_ptr<Expr> &value)
+yapvm::ast::Assign::Assign(const array<scoped_ptr<Expr>> &target, const scoped_ptr<Expr> &value)
     : target_{ target }, value_{ value } {
 }
 
 
-const scoped_ptr<Expr> &yapvm::ast::Assign::target() const {
+const array<scoped_ptr<Expr>> &yapvm::ast::Assign::target() const {
     return target_;
 }
 

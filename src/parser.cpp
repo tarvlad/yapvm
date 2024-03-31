@@ -55,6 +55,36 @@ array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &po
 }
 
 
+static
+array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &pos) {
+    if (input[pos] != '[') {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos++;
+    if (input[pos] == ']') {
+        pos++;
+        return {};
+    }
+
+    std::vector<scoped_ptr<Expr>> statements;
+    while (true) {
+        scoped_ptr<Expr> stmt = generate_expr(input, pos);
+        statements.emplace_back(std::move(stmt));
+        if (input[pos] == ',' && input[pos + 1] == ' ') {
+            pos += 2;
+            continue;
+        }
+        break;
+    }
+    array<scoped_ptr<Expr>> result = std::move(statements);
+    if (input[pos] != ']') {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos++;
+    return result;
+}
+
+
 static 
 array<std::string> generate_function_args(const std::string &input, size_t &pos) {
     if (input[pos] != '[') {
@@ -186,6 +216,26 @@ scoped_ptr<Stmt> generate_return(const std::string &input, size_t &pos) {
 }
 
 
+static 
+scoped_ptr<Stmt> generate_assign(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Assign(targets=", pos));
+    pos += sizeof("Assign(targets=") - 1;
+
+    array<scoped_ptr<Expr>> targets = generate_expr_array(input, pos);
+    if (!sstrcmp(input, ", value=", pos)) {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos += sizeof(", value=") - 1;
+
+    scoped_ptr<Expr> value = generate_expr(input, pos);
+    if (input[pos] != ')') {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos++;
+    return new Assign{ targets, value };
+}
+
+
 static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     scoped_ptr<Stmt> res;
@@ -204,6 +254,10 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     
     if (sstrcmp(input, "Return(", pos)) {
         return generate_return(input, pos);
+    }
+
+    if (sstrcmp(input, "Assign(targets=", pos)) {
+        return generate_assign(input, pos);
     }
     //TODO
     parse_error(pos, __FILE__, std::to_string(__LINE__));
