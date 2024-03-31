@@ -80,47 +80,38 @@ size_t cstrsz(const char *str);
 template<typename T, __scptr_copy_semantics CopySem = COPY>
 class scoped_ptr {
 private:
-    T* ptr_;
+    T *ptr_;
 
 public:
-    scoped_ptr(T* p = nullptr) : ptr_{ p } {}
+    scoped_ptr(T *p = nullptr) : ptr_{ p } {}
 
     ~scoped_ptr() {
         delete ptr_;
     }
 
-    // Disallow copying if specified as Move
-    template<__scptr_copy_semantics C = CopySem>
-    scoped_ptr(const scoped_ptr<T, C>&) requires (CopySem == __scptr_copy_semantics::COPY) = delete;
+    scoped_ptr(const scoped_ptr &) requires(CopySem == MOVE) = delete;
 
-    template<__scptr_copy_semantics C = CopySem>
-    scoped_ptr& operator=(const scoped_ptr<T, C>&) requires (CopySem == __scptr_copy_semantics::COPY) = delete;
+    scoped_ptr(const scoped_ptr &p) requires(CopySem == COPY) : ptr_{ new T{ *p } } {}
 
-    // Move constructor
-    scoped_ptr(scoped_ptr &&other) {
-        if constexpr (CopySem == __scptr_copy_semantics::MOVE) {
-            ptr_ = other.ptr_;
-            other.ptr_ = nullptr;
-        } else {
-            ptr_ = new T(*other.ptr_);
-            other.ptr_ = nullptr;
-        }
+    scoped_ptr(scoped_ptr &&p) : ptr_{ p.ptr_ } {
+        p.ptr_ = nullptr;
     }
 
-    // Move assignment 
-    scoped_ptr& operator=(scoped_ptr &&other) {
-        if (this != &other) {
-            if constexpr (CopySem == __scptr_copy_semantics::MOVE) {
-                delete ptr_;
-                ptr_ = other.ptr_;
-                other.ptr_ = nullptr;
-            } else {
-                if (ptr_ != other.ptr_) {
-                    delete ptr_;
-                    ptr_ = new T{*other.ptr_};
-                }
-                other.ptr_ = nullptr;
-            }
+    scoped_ptr &operator=(const scoped_ptr &) requires(CopySem == MOVE) = delete;
+
+    scoped_ptr &operator=(const scoped_ptr &p) requires(CopySem == COPY) {
+        if (&p != this) {
+            delete ptr_;
+            ptr_ = new T{ *p };
+        }
+        return *this;
+    }
+
+    scoped_ptr &operator=(scoped_ptr &&p) {
+        if (&p != this) {
+            delete ptr_;
+            ptr_ = p.ptr_;
+            p.ptr_ = nullptr;
         }
         return *this;
     }
@@ -141,18 +132,12 @@ public:
         return ptr_ == p;
     }
 
-    void reset(T *p = nullptr) {
-        if constexpr (CopySem == __scptr_copy_semantics::COPY) {
-            delete ptr_;
-            ptr_ = (p != nullptr) ? new T{*p} : nullptr;
-        } else {
-            delete ptr_;
-            ptr_ = p;
-        }
-    }
-
     operator bool() const {
         return ptr_ != nullptr;
+    }
+
+    operator T *() const {
+        return ptr_;
     }
 };
 

@@ -10,35 +10,30 @@ using namespace yapvm::ast;
 using namespace yapvm;
 
 
+static void parse_error(size_t pos) {
+    throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
+}
+
+
 static scoped_ptr<Import> generate_import(const std::string &input, size_t &pos);//TODO
 
 
 static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
-    auto parse_error = [pos] {
-        throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
-    };    
-
     scoped_ptr<Stmt> res;
-    check(sstrcmp(input, "Import(names=[alias(name=", pos))
-    .and_then(
-        [&res, &pos, &input, &parse_error] {
-            pos += sizeof("Import(names=[alias(name=") - 1;
-            std::string name = extract_delimited_substring(input, pos);
-            res = new Import{ name };
-            pos += name.size() + 2;
-            
-            check(sstrcmp(input, ")])", pos))
-            .and_then(
-                [&pos] {
-                    pos += sizeof(")])") - 1;
-                }
-            )
-            .or_else(
-                parse_error
-            );
+
+    if (sstrcmp(input, "Import(names=[alias(name=", pos)) {
+        pos += sizeof("Import(names=[alias(name=") - 1;
+        std::string name = extract_delimited_substring(input, pos);
+        res = new Import{ name };
+        pos += name.size() + 2;
+
+        if (!sstrcmp(input, ")])", pos)) {
+            parse_error(pos);
         }
-    );
-    RETURN_IF(res != nullptr, res);
+        pos += sizeof(")])") - 1;
+        return res;
+    }
+
 
     
 
@@ -50,23 +45,25 @@ static scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
 // currently throws runtime_error, in future need to add custom type for exceptions
 static 
 scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
-    auto parse_error = [pos] {
-        throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "]");
-    };
-
-    check(sstrcmp(input, "Module(", pos))
-        .and_then([&pos] { pos += sizeof("Module(") - 1; })
-        .or_else(parse_error);
+    if (!sstrcmp(input, "Module(", pos)) {
+        parse_error(pos);
+    }
+    pos += sizeof("Module(") - 1;
     
-    check(sstrcmp(input, "body=[", pos))
-        .and_then([&pos] { pos += sizeof("body=[") - 1; })
-        .or_else(parse_error);
+    if (!sstrcmp(input, "body=[", pos)) {
+        parse_error(pos);
+    }
+    pos += sizeof("body=[") - 1;
 
+    //TODO generate stmt-s
 
-    //TODO statements
-
-    check(input[pos] == ']').and_then([&pos] { pos++; }).or_else(parse_error);
-    check(input[pos] == ')').or_else(parse_error);
+    if (input[pos] != ']') {
+        parse_error(pos);
+    }
+    pos++;
+    if (input[pos] != ')') {
+        parse_error(pos);
+    }
     //TODO return 
     return nullptr; //tmp
 }

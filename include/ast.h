@@ -5,6 +5,7 @@
 #include "y_objects.h"
 #include <string>
 #include <vector>
+#include "utils.h"
 
 
 namespace yapvm {
@@ -59,103 +60,100 @@ class Expr : public Node {};
 
 class BoolOp : public Expr {
     BoolOpKind op_;
-    std::span<Expr *> values_;
+    array<scoped_ptr<Expr>> values_;
 
 public:
-    BoolOp(BoolOpKind op, std::span<Expr *> values);
-    ~BoolOp();
+    BoolOp(BoolOpKind op, const array<scoped_ptr<Expr>> &values);
 
     BoolOpKind op() const;
-    const std::span<Expr *> &values() const;
+    const array<scoped_ptr<Expr>> &values() const;
 };
 
 class BinOp : public Expr {
-    Expr *left_;
+    scoped_ptr<Expr> left_;
     OperatorKind op_;
-    Expr *right_;
+    scoped_ptr<Expr> right_;
 
 public:
-    BinOp(Expr *left, OperatorKind op, Expr *right);
-    ~BinOp();
+    BinOp(const scoped_ptr<Expr> &left, OperatorKind op, const scoped_ptr<Expr> &right);
 
-    Expr *left() const;
-    Expr *right() const;
+    const scoped_ptr<Expr> &left() const;
+    const scoped_ptr<Expr> &right() const;
     OperatorKind op() const;
 };
 
 class UnaryOp : public Expr {
     UnaryOpKind op_;
-    Expr *operand_;
+    scoped_ptr<Expr> operand_;
 
 public:
-    UnaryOp(UnaryOpKind op, Expr *operand);
-    ~UnaryOp();
+    UnaryOp(UnaryOpKind op, const scoped_ptr<Expr> &operand);
 
     UnaryOpKind op() const;
-    Expr *operand() const;
+    const scoped_ptr<Expr> &operand() const;
 };
 
 class Compare : public Expr {
-    Expr *left_;
-    std::span<CmpOpKind> ops_;
-    std::span<Expr *> comparators_;
+    scoped_ptr<Expr> left_;
+    array<CmpOpKind> ops_;
+    array<scoped_ptr<Expr>> comparators_;
 
 public:
-    Compare(Expr *left, std::span<CmpOpKind> ops, std::span<Expr *> comparators);
-    ~Compare();
+    Compare(
+        const scoped_ptr<Expr> &left, 
+        const array<CmpOpKind> &ops, 
+        const array<scoped_ptr<Expr>> &comparators
+    );
 
-    const std::span<CmpOpKind> &ops() const;
-    const std::span<Expr *> &comparators() const;
+    const scoped_ptr<Expr> &left() const;
+    const array<CmpOpKind> &ops() const;
+    const array<scoped_ptr<Expr>> &comparators() const;
 };
 
 
 class Call : public Expr {
-    Expr *func_;
-    std::span<Expr *> args_;
+    scoped_ptr<Expr> func_;
+    array<scoped_ptr<Expr>> args_;
 
 public:
-    Call(Expr *func, std::span<Expr *> args);
-    ~Call();
+    Call(const scoped_ptr<Expr> &func, const array<scoped_ptr<Expr>> &args);
 
-    Expr *func() const;
-    const std::span<Expr *> &args() const;
+    const scoped_ptr<Expr> &func() const;
+    const array<scoped_ptr<Expr>> &args() const;
 };
 
 
 class Constant : public Expr {
-    YPrimitiveObject *value_;
+    scoped_ptr<YPrimitiveObject> value_;
 
 public:
-    Constant(YPrimitiveObject *value);
-    ~Constant();
+    Constant(const scoped_ptr<YPrimitiveObject> &value);
 
-    YPrimitiveObject *value() const;
+    const scoped_ptr<YPrimitiveObject> &value() const;
 };
 
 
 class Attribute : public Expr {
-    Expr *value_;
+    scoped_ptr<Expr> value_;
     std::string attr_;
 
 public:
-    Attribute(Expr *value, const std::string &attr);
-    ~Attribute();
+    Attribute(const scoped_ptr<Expr> &value, const std::string &attr);
 
-    Expr *value() const;
+    const scoped_ptr<Expr> &value() const;
     const std::string &attr() const;
 };
 
 
 class Subscript : public Expr {
-    Expr *value_;
-    Expr *key_;
+    scoped_ptr<Expr> value_;
+    scoped_ptr<Expr> key_;
 
 public:
-    Subscript(Expr *value, Expr *key);
-    ~Subscript();
+    Subscript(const scoped_ptr<Expr> &value, const scoped_ptr<Expr> &key);
 
-    Expr *key() const;
-    Expr *value() const;
+    const scoped_ptr<Expr> &key() const;
+    const scoped_ptr<Expr> &value() const;
 };
 
 
@@ -176,13 +174,12 @@ class Stmt : public Node {};
 
 
 class Module : public Stmt {
-    std::span<Stmt *> body_;
+    array<scoped_ptr<Stmt>> body_;
     
 public:
-    Module(std::span<Stmt *> body);
-    ~Module();
+    Module(const array<scoped_ptr<Stmt>> &body);
 
-    const std::span<Stmt *> &body() const;
+    const array<scoped_ptr<Stmt>> &body() const;
 };
 
 
@@ -198,105 +195,97 @@ public:
 
 class FunctionDef : public Stmt {
     std::string name_;
-    std::span<std::string> args_;
-    std::span<Stmt *> body_;
-    Expr *returns_; // just nullptr if nothing
+    array<std::string> args_;
+    array<scoped_ptr<Stmt>> body_;
+    scoped_ptr<Expr> returns_; // just nullptr if nothing
 
 public:
-    FunctionDef(const std::string &name, std::span<std::string> args, std::span<Stmt *> body);
-    FunctionDef(const std::string &name, std::span<std::string> args, std::span<Stmt *> body, Expr *returns);
-    ~FunctionDef();
+    FunctionDef(const std::string &name, const array<std::string> &args, const array<scoped_ptr<Stmt>> &body);
+    FunctionDef(const std::string &name, const array<std::string> &args, const array<scoped_ptr<Stmt>> &body, const scoped_ptr<Expr> &returns);
 
     const std::string &name() const;
-    const std::span<std::string> &args() const;
-    const std::span<Stmt *> &body() const;
-    Expr *returns() const;
+    const array<std::string> &args() const;
+    const array<scoped_ptr<Stmt>> &body() const;
+    const scoped_ptr<Expr> &returns() const;
     bool returns_anything() const;
 };
 
 class ClassDef : public Stmt {
     std::string name_;
-    std::span<Stmt *> body_;
+    array<scoped_ptr<Stmt>> body_;
 
 public:
-    ClassDef(const std::string &name, std::span<Stmt *> body);
-    ~ClassDef();
+    ClassDef(const std::string &name, const array<scoped_ptr<Stmt>> &body);
 
     const std::string &name() const;
-    const std::span<Stmt *> body() const;
+    const array<scoped_ptr<Stmt>> &body() const;
 };
 
 class Return : public Stmt {
-    Expr *value_; // nullptr if returns nothing
+    scoped_ptr<Expr> value_; // nullptr if returns nothing
 
 public:
-    Return(Expr *value);
-    ~Return();
+    Return(const scoped_ptr<Expr> &value);
 
     bool returns_anything() const;
-    Expr *value() const;
+    const scoped_ptr<Expr> &value() const;
 };
 
 class Assign : public Stmt {
-    Expr *target_;
-    Expr *value_;
+    scoped_ptr<Expr> target_;
+    scoped_ptr<Expr> value_;
 
 public:
-    Assign(Expr *target, Expr *value);
-    ~Assign();
+    Assign(const scoped_ptr<Expr> &target, const scoped_ptr<Expr> &value);
 
-    Expr *target() const;
-    Expr *value() const;
+    const scoped_ptr<Expr> &target() const;
+    const scoped_ptr<Expr> &value() const;
 };
 
 class AugAssign : public Stmt {
-    Expr *target_;
+    scoped_ptr<Expr> target_;
     OperatorKind op_;
-    Expr *value_;
+    scoped_ptr<Expr> value_;
 
 public:
-    AugAssign(Expr *target, OperatorKind op, Expr *value);
-    ~AugAssign();
+    AugAssign(const scoped_ptr<Expr> &target, OperatorKind op, const scoped_ptr<Expr> &value);
 
-    Expr *target() const;
+    const scoped_ptr<Expr> &target() const;
     OperatorKind op() const;
-    Expr *value() const;
+    const scoped_ptr<Expr> &value() const;
 };
 
 class While : public Stmt {
-    Expr *test_;
-    std::span<Stmt *> body_;
+    scoped_ptr<Expr> test_;
+    array<scoped_ptr<Stmt>> body_;
 
 public:
-    While(Expr *test, std::span<Stmt *> body);
-    ~While();
+    While(const scoped_ptr<Expr> &test, const array<scoped_ptr<Stmt>> &body);
 
-    Expr *test() const;
-    const std::span<Stmt *> &body() const;
+    const scoped_ptr<Expr> &test() const;
+    const array<scoped_ptr<Stmt>> &body() const;
 };
 
 class If : public Stmt {
-    Expr *test_;
-    std::span<Stmt *> body_;
-    std::span<Stmt *> orelse_;
+    scoped_ptr<Expr> test_;
+    array<scoped_ptr<Stmt>> body_;
+    array<scoped_ptr<Stmt>> orelse_;
 
 public:
-    If(Expr *test, std::span<Stmt *> body, std::span<Stmt *> orelse);
-    ~If();
+    If(const scoped_ptr<Expr> &test, const array<scoped_ptr<Stmt>> &body, const array<scoped_ptr<Stmt>> &orelse);
 
-    Expr *test() const;
-    const std::span<Stmt *> &body() const;
-    const std::span<Stmt *> &orelse() const;
+    const scoped_ptr<Expr> &test() const;
+    const array<scoped_ptr<Stmt>> &body() const;
+    const array<scoped_ptr<Stmt>> &orelse() const;
 };
 
 class ExprStmt : public Stmt {
-    Expr *value_;
+    scoped_ptr<Expr> value_;
 
 public:
-    ExprStmt(Expr *value);
-    ~ExprStmt();
+    ExprStmt(const scoped_ptr<Expr> &value);
 
-    Expr *value() const;
+    const scoped_ptr<Expr> &value() const;
 };
 
 class Pass : public Stmt {};

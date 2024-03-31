@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstddef>
 
-static_assert(sizeof(void *) == 8);
+static_assert(sizeof(void *) == 8); // for MSVC x64 compatibility
 using ssize_t = long long;
 
 namespace yapvm {
