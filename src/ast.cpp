@@ -187,6 +187,9 @@ yapvm::ast::Return::Return(const scoped_ptr<Expr> &value)
     : value_{ value } {}
 
 
+yapvm::ast::Return::Return() : value_{ nullptr } {}
+
+
 bool yapvm::ast::Return::returns_anything() const {
     return value_ != nullptr;
 }

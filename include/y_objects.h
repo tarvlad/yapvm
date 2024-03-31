@@ -4,8 +4,10 @@
 #include <cstddef>
 #include <cstddef>
 
+#if _MSC_VER
 static_assert(sizeof(void *) == 8); // for MSVC x64 compatibility
 using ssize_t = long long;
+#endif
 
 namespace yapvm {
 namespace yobjects {

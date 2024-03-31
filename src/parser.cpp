@@ -21,6 +21,10 @@ static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos);
 
 
+static
+scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos);
+
+
 static 
 array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &pos) {
     if (input[pos] != '[') {
@@ -139,6 +143,7 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
 static 
 scoped_ptr<Stmt> generate_class_def(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "ClassDef(name=", pos));
+    pos += sizeof("ClassDef(name=") - 1;
 
     std::string name = extract_delimited_substring(input, pos);
     pos += name.size() + 2;
@@ -158,6 +163,30 @@ scoped_ptr<Stmt> generate_class_def(const std::string &input, size_t &pos) {
 
 
 static
+scoped_ptr<Stmt> generate_return(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Return(", pos));
+
+    pos += sizeof("Return(") - 1;
+    if (input[pos] == ')') {
+        pos++;
+        return new Return{};
+    }
+
+    if (!sstrcmp(input, "value=(", pos)) {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos += sizeof("value=(") - 1;
+    scoped_ptr<Expr> value = generate_expr(input, pos);
+
+    if (input[pos] != ')') {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos++;
+    return new Return{ value };
+}
+
+
+static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     scoped_ptr<Stmt> res;
 
@@ -173,7 +202,9 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
         return generate_class_def(input, pos);
     }
     
-
+    if (sstrcmp(input, "Return(", pos)) {
+        return generate_return(input, pos);
+    }
     //TODO
     parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
@@ -219,6 +250,12 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
     } 
     pos++;
     return new Module{ data };
+}
+
+
+static
+scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
+    throw std::runtime_error("Not implemented currently"); //TODO
 }
 
 

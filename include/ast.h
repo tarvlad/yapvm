@@ -226,6 +226,7 @@ class Return : public Stmt {
 
 public:
     Return(const scoped_ptr<Expr> &value);
+    Return();
 
     bool returns_anything() const;
     const scoped_ptr<Expr> &value() const;
