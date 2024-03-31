@@ -7,6 +7,7 @@
 #include <memory>
 #include <algorithm>
 #include <concepts>
+#include <type_traits>
 
 
 namespace yapvm {
@@ -145,16 +146,27 @@ public:
 template<typename T, typename Allocator = std::allocator<T>>
 class array {
 private:
+    Allocator allocator_;
     T *data_;
     size_t size_;
-    Allocator allocator_;
 
 public:
-    array(size_t size, const Allocator &allocator = Allocator()) 
-        : data_{allocator.allocate(size)}, size_{size}, allocator_{allocator} {}
+    array(const Allocator &allocator = Allocator{})
+        : data_{ nullptr }, size_{ 0 }, allocator_{ allocator } {}
 
-    array(const array &other) 
-        : data_{allocator_.allocate(other.size_)}, size_{other.size_}, allocator_{other.allocator_} {
+    array(size_t size, const Allocator &allocator = Allocator{})
+        : data_{ allocator_.allocate(size) }, size_{ size }, allocator_{ allocator } {
+        for (size_t i = 0; i < size_; ++i) {
+            if constexpr (std::is_fundamental_v<T>) {
+                data_[i] = T{};  // Directly initialize primitive types to zero
+            } else {
+                std::construct_at(data_ + i);  // Use std::construct_at for non-primitive types
+            }
+        }
+    }
+
+    array(const array &other)
+        : data_{ allocator_.allocate(other.size_) }, size_{ other.size_ }, allocator_{ other.allocator_ } {
         std::uninitialized_copy(other.begin(), other.end(), begin());
     }
 
@@ -166,8 +178,8 @@ public:
         return *this;
     }
 
-    array(array &&other) noexcept 
-        : data_{other.data_}, size_{other.size_}, allocator_{std::move(other.allocator_)} {
+    array(array &&other) noexcept
+        : data_{ other.data_ }, size_{ other.size_ }, allocator_{ std::move(other.allocator_) } {
         other.data_ = nullptr;
         other.size_ = 0;
     }
@@ -183,7 +195,9 @@ public:
 
     ~array() {
         if (data_) {
-            std::destroy(begin(), end());
+            for (size_t i = 0; i < size_; ++i) {
+                std::destroy_at(data_ + i);  // Use std::destroy_at
+            }
             allocator_.deallocate(data_, size_);
         }
     }
