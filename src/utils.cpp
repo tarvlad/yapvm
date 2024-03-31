@@ -97,7 +97,7 @@ std::string yapvm::extract_delimited_substring(const std::string &str, size_t po
             continue;
         }
         if (str[i] == delimiter) {
-            end_pos = i;
+            end_pos = i - 1;
             break;
         }
     }

@@ -154,6 +154,18 @@ public:
     array(const Allocator &allocator = Allocator{})
         : data_{ nullptr }, size_{ 0 }, allocator_{ allocator } {}
 
+    array(const std::vector<T> &v) : array{ v.size() } {
+        for (size_t i = 0; i < v.size(); i++) {
+            data_[i] = v[i];
+        }
+    }
+
+    array(std::vector<T> &&v) : array{ v.size() } {
+        for (size_t i = 0; i < v.size(); i++) {
+            data_[i] = std::move(v[i]);
+        }
+    }
+
     array(size_t size, const Allocator &allocator = Allocator{})
         : data_{ allocator_.allocate(size) }, size_{ size }, allocator_{ allocator } {
         for (size_t i = 0; i < size_; ++i) {
