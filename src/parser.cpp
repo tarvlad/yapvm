@@ -32,7 +32,8 @@ array<std::string> generate_args(const std::string &input, size_t &pos) {
 }
 
 
-static scoped_ptr<Stmt> generate_import(const std::string &input, size_t &pos) {
+static 
+scoped_ptr<Stmt> generate_import(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "Import(names=[alias(name=", pos));
     
     pos += sizeof("Import(names=[alias(name=") - 1;
@@ -57,6 +58,9 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
         parse_error(pos);
     }
     pos += sizeof(", args=arguments(posonlyargs=[], args=") - 1;
+
+    //TODO
+    return nullptr; //TMP
 }
 
 
