@@ -58,7 +58,7 @@ array<std::string> generate_function_args(const std::string &input, size_t &pos)
 }
 
 
-static 
+static
 scoped_ptr<Stmt> generate_import(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "Import(names=[alias(name=", pos));
 
@@ -79,7 +79,7 @@ static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos);
 
 
-static 
+static
 array<scoped_ptr<Stmt>> generate_function_body(const std::string &input, size_t &pos) {
     if (input[pos] != '[') {
         parse_error(pos, __FILE__, std::to_string(__LINE__));
@@ -125,7 +125,7 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
     pos += sizeof(", kwonlyargs=[], kw_defaults=[], defaults=[]), body=") - 1;
 
     array<scoped_ptr<Stmt>> statements = generate_function_body(input, pos);
-    
+
     if (input[pos] != ')') {
         parse_error(pos, __FILE__, std::to_string(__LINE__));
     }
@@ -136,6 +136,22 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
 
 
 static 
+scoped_ptr<Stmt> generate_class_def(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "ClassDef(name=", pos));
+
+    std::string name = extract_delimited_substring(input, pos);
+    pos += name.size() + 2;
+
+    if (!sstrcmp(input, ", bases=[], keywords=[], body=", pos)) {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos += sizeof(", bases=[], keywords=[], body=") - 1;
+    //TODO
+    return nullptr;
+}
+
+
+static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     scoped_ptr<Stmt> res;
 
@@ -145,6 +161,10 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
 
     if (sstrcmp(input, "FunctionDef(name=", pos)) {
         return generate_function_def(input, pos);
+    }
+
+    if (sstrcmp(input, "ClassDef(name=", pos)) {
+        return generate_class_def(input, pos);
     }
     
 
