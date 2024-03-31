@@ -17,6 +17,40 @@ static void parse_error(size_t pos, std::string file, std::string line) {
 }
 
 
+static
+scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos);
+
+
+static 
+array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &pos) {
+    if (input[pos] != '[') {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos++;
+    if (input[pos] == ']') {
+        pos++;
+        return {};
+    }
+
+    std::vector<scoped_ptr<Stmt>> statements;
+    while (true) {
+        scoped_ptr<Stmt> stmt = generate_stmt(input, pos);
+        statements.emplace_back(std::move(stmt));
+        if (input[pos] == ',' && input[pos + 1] == ' ') {
+            pos += 2;
+            continue;
+        }
+        break;
+    }
+    array<scoped_ptr<Stmt>> result = std::move(statements);
+    if (input[pos] != ']') {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos++;
+    return result;
+}
+
+
 static 
 array<std::string> generate_function_args(const std::string &input, size_t &pos) {
     if (input[pos] != '[') {
@@ -75,39 +109,6 @@ scoped_ptr<Stmt> generate_import(const std::string &input, size_t &pos) {
 }
 
 
-static
-scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos);
-
-
-static
-array<scoped_ptr<Stmt>> generate_function_body(const std::string &input, size_t &pos) {
-    if (input[pos] != '[') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
-    pos++;
-    if (input[pos] == ']') {
-        return {};
-    }
-
-    std::vector<scoped_ptr<Stmt>> statements;
-    while (true) {
-        scoped_ptr<Stmt> stmt = generate_stmt(input, pos);
-        statements.emplace_back(std::move(stmt));
-        if (input[pos] == ',' && input[pos + 1] == ' ') {
-            pos += 2;
-            continue;
-        }
-        break;
-    }
-    array<scoped_ptr<Stmt>> result = std::move(statements);
-    if (input[pos] != ']') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
-    pos++;
-    return result;
-}
-
-
 static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "FunctionDef(name=", pos));
     pos += sizeof("FunctionDef(name=") - 1;
@@ -124,14 +125,14 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
     }
     pos += sizeof(", kwonlyargs=[], kw_defaults=[], defaults=[]), body=") - 1;
 
-    array<scoped_ptr<Stmt>> statements = generate_function_body(input, pos);
+    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
 
     if (input[pos] != ')') {
         parse_error(pos, __FILE__, std::to_string(__LINE__));
     }
     pos++;
 
-    return new FunctionDef{ name, args, statements };
+    return new FunctionDef{ name, args, body };
 }
 
 
@@ -146,8 +147,13 @@ scoped_ptr<Stmt> generate_class_def(const std::string &input, size_t &pos) {
         parse_error(pos, __FILE__, std::to_string(__LINE__));
     }
     pos += sizeof(", bases=[], keywords=[], body=") - 1;
-    //TODO
-    return nullptr;
+    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+
+    if (!sstrcmp(input, ", decorator_list=[], type_params=[])", pos)) {
+        parse_error(pos, __FILE__, std::to_string(__LINE__));
+    }
+    pos += sizeof(", decorator_list=[], type_params=[])") - 1;
+    return new ClassDef{ name, body };
 }
 
 
