@@ -173,7 +173,7 @@ class Dict : public Expr {};
 class Stmt : public Node {};
 
 
-class Module : public Stmt {
+class Module : public Node {
     array<scoped_ptr<Stmt>> body_;
     
 public:

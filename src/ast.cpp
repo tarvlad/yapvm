@@ -35,7 +35,7 @@ const scoped_ptr<Expr> &yapvm::ast::BinOp::left() const {
 
 
 const scoped_ptr<Expr> &yapvm::ast::BinOp::right() const {
-    return left_;
+    return right_;
 }
 
 
