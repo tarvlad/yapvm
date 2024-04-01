@@ -27,9 +27,7 @@ scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos);
 
 static 
 array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &pos) {
-    if (input[pos] != '[') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     if (input[pos] == ']') {
         pos++;
@@ -47,9 +45,7 @@ array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &po
         break;
     }
     array<scoped_ptr<Stmt>> result = std::move(statements);
-    if (input[pos] != ']') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return result;
 }
@@ -57,9 +53,7 @@ array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &po
 
 static
 array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &pos) {
-    if (input[pos] != '[') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     if (input[pos] == ']') {
         pos++;
@@ -77,9 +71,7 @@ array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &po
         break;
     }
     array<scoped_ptr<Expr>> result = std::move(statements);
-    if (input[pos] != ']') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return result;
 }
@@ -87,9 +79,7 @@ array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &po
 
 static 
 array<std::string> generate_function_args(const std::string &input, size_t &pos) {
-    if (input[pos] != '[') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     if (input[pos] == ']') {
         pos++;
@@ -98,16 +88,14 @@ array<std::string> generate_function_args(const std::string &input, size_t &pos)
 
     std::vector<std::string> args;
     while (true) {
-        if (!sstrcmp(input, "arg(arg=", pos)) {
-            parse_error(pos, __FILE__, std::to_string(__LINE__));
-        }
+        assume(sstrcmp(input, "arg(arg=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
         pos += sizeof("arg(arg=") - 1;
+
         std::string arg = extract_delimited_substring(input, pos);
         pos += arg.size() + 2;
         args.emplace_back(std::move(arg));
-        if (input[pos] != ')') {
-            parse_error(pos, __FILE__, std::to_string(__LINE__));
-        }
+        
+        assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
         pos++;
         if (input[pos] == ',' && input[pos + 1] == ' ') {
             pos += 2;
@@ -118,9 +106,7 @@ array<std::string> generate_function_args(const std::string &input, size_t &pos)
 
     array<std::string> result = std::move(args);
 
-    if (input[pos] != ']') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return result;
 }
@@ -135,9 +121,7 @@ scoped_ptr<Stmt> generate_import(const std::string &input, size_t &pos) {
     scoped_ptr<Stmt> res = new Import{ name };
     pos += name.size() + 2;
 
-    if (!sstrcmp(input, ")])", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, ")])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(")])") - 1;
     return res;
 }
@@ -148,22 +132,17 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
     pos += sizeof("FunctionDef(name=") - 1;
     std::string name = extract_delimited_substring(input, pos);
     pos += name.size() + 2;
-    if (!sstrcmp(input, ", args=arguments(posonlyargs=[], args=", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+
+    assume(sstrcmp(input, ", args=arguments(posonlyargs=[], args=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", args=arguments(posonlyargs=[], args=") - 1;
 
     array<std::string> args = generate_function_args(input, pos);
-    if (!sstrcmp(input, ", kwonlyargs=[], kw_defaults=[], defaults=[]), body=", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, ", kwonlyargs=[], kw_defaults=[], defaults=[]), body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", kwonlyargs=[], kw_defaults=[], defaults=[]), body=") - 1;
 
     array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
 
-    if (input[pos] != ')') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
     return new FunctionDef{ name, args, body };
@@ -178,15 +157,11 @@ scoped_ptr<Stmt> generate_class_def(const std::string &input, size_t &pos) {
     std::string name = extract_delimited_substring(input, pos);
     pos += name.size() + 2;
 
-    if (!sstrcmp(input, ", bases=[], keywords=[], body=", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, ", bases=[], keywords=[], body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", bases=[], keywords=[], body=") - 1;
     array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
 
-    if (!sstrcmp(input, ", decorator_list=[], type_params=[])", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, ", decorator_list=[], type_params=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", decorator_list=[], type_params=[])") - 1;
     return new ClassDef{ name, body };
 }
@@ -202,15 +177,12 @@ scoped_ptr<Stmt> generate_return(const std::string &input, size_t &pos) {
         return new Return{};
     }
 
-    if (!sstrcmp(input, "value=(", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, "value=(", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof("value=(") - 1;
+    
     scoped_ptr<Expr> value = generate_expr(input, pos);
 
-    if (input[pos] != ')') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return new Return{ value };
 }
@@ -222,17 +194,42 @@ scoped_ptr<Stmt> generate_assign(const std::string &input, size_t &pos) {
     pos += sizeof("Assign(targets=") - 1;
 
     array<scoped_ptr<Expr>> targets = generate_expr_array(input, pos);
-    if (!sstrcmp(input, ", value=", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, ", value=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", value=") - 1;
 
     scoped_ptr<Expr> value = generate_expr(input, pos);
-    if (input[pos] != ')') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return new Assign{ targets, value };
+}
+
+
+static
+scoped_ptr<OperatorKind> generate_operator_kind(const std::string &input, size_t &pos);
+
+
+static 
+scoped_ptr<Stmt>
+generate_aug_assign(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "AugAssign(target=", pos));
+
+    pos += sizeof("AugAssign(target=") - 1;
+    scoped_ptr<Expr> target = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", op=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", op=") - 1;
+
+    scoped_ptr<OperatorKind> op = generate_operator_kind(input, pos);
+
+    assume(sstrcmp(input, ", value=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", value=") - 1;
+
+    scoped_ptr<Expr> value = generate_expr(input, pos);
+
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    return new AugAssign{ target, *op, value };
 }
 
 
@@ -259,6 +256,10 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     if (sstrcmp(input, "Assign(targets=", pos)) {
         return generate_assign(input, pos);
     }
+
+    if (sstrcmp(input, "AugAssign(target=", pos)) {
+        return generate_aug_assign(input, pos);
+    }
     //TODO
     parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
@@ -267,15 +268,12 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
 // currently throws runtime_error, in future need to add custom type for exceptions
 static 
 scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
-    if (!sstrcmp(input, "Module(", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, "Module(", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof("Module(") - 1;
     
-    if (!sstrcmp(input, "body=[", pos)) {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
+    assume(sstrcmp(input, "body=[", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof("body=[") - 1;
+    
     if (input[pos] == ']' && input[pos + 1] == ')') { //empty module
         pos += 2;
         return new Module{ {} };
@@ -295,15 +293,17 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
     }
     array<scoped_ptr<Stmt>> data = std::move(statements);
 
-    if (input[pos] != ']') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    }
-    pos++;
-    if (input[pos] != ')') {
-        parse_error(pos, __FILE__, std::to_string(__LINE__));
-    } 
+    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++; 
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return new Module{ data };
+}
+
+
+static
+scoped_ptr<OperatorKind> generate_operator_kind(const std::string &input, size_t &pos) {
+    throw std::runtime_error("Not implemented currently"); //TODO
 }
 
 
@@ -313,11 +313,10 @@ scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
 }
 
 
+
 scoped_ptr<Module> yapvm::parser::generate_ast(const std::string &input) {
     size_t pos = 0;
     scoped_ptr<Module> module = generate_module(input, pos);
-    if (pos != input.size() - 1) {
-        throw std::runtime_error("AST generation error");
-    }
+    assume(pos == input.size() - 1, [] { throw std::runtime_error("AST generation error"); });
     return module;
 }

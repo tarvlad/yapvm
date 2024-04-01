@@ -143,6 +143,14 @@ public:
 };
 
 
+template<typename Callable, typename... Args>
+void assume(bool cond, Callable call_if_error, Args&&... args) {
+    if (!cond) {
+        std::invoke(call_if_error, std::forward<Args>(args)...);
+    }
+}
+
+
 template<typename T, typename Allocator = std::allocator<T>>
 class array {
 private:
