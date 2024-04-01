@@ -142,8 +142,8 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
 
     array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
 
-    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
-    pos++;
+    assume(sstrcmp(input, ", decorator_list=[], type_params=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", decorator_list=[], type_params=[])") - 1;
 
     return new FunctionDef{ name, args, body };
 }
@@ -177,8 +177,8 @@ scoped_ptr<Stmt> generate_return(const std::string &input, size_t &pos) {
         return new Return{};
     }
 
-    assume(sstrcmp(input, "value=(", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
-    pos += sizeof("value=(") - 1;
+    assume(sstrcmp(input, "value=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof("value=") - 1;
     
     scoped_ptr<Expr> value = generate_expr(input, pos);
 
@@ -490,6 +490,10 @@ scoped_ptr<OperatorKind> generate_operator_kind(const std::string &input, size_t
         pos += sizeof("Invert()") - 1;
         return new Invert{};
     }
+    if (sstrcmp(input, "USub()", pos)) {
+        pos += sizeof("USub()") - 1;
+        return new USub{};
+    }
     if (sstrcmp(input, "Add()", pos)) {
         pos += sizeof("Add()") - 1;
         return new Add{};
@@ -610,11 +614,305 @@ scoped_ptr<Expr> generate_bool_op(const std::string &input, size_t &pos) {
 
 
 static
+scoped_ptr<Expr> generate_bin_op(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "BinOp(left=", pos));
+
+    pos += sizeof("BinOp(left=") - 1;
+    scoped_ptr<Expr> left = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", op=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", op=") - 1;
+    scoped_ptr<BinOpKind> op = conv_or<OperatorKind, BinOpKind>(generate_operator_kind(input, pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+
+    assume(sstrcmp(input, ", right=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", right=") - 1;
+
+    scoped_ptr<Expr> right = generate_expr(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new BinOp{ left, op, right };
+}
+
+
+static
+scoped_ptr<Expr> generate_unary_op(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "UnaryOp(op=", pos));
+
+    pos += sizeof("UnaryOp(op=") - 1;
+    scoped_ptr<UnaryOpKind> op = conv_or<OperatorKind, UnaryOpKind>(generate_operator_kind(input, pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    
+    assume(sstrcmp(input, ", operand=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", operand=") - 1;
+
+    scoped_ptr<Expr> operand = generate_expr(input, pos);
+
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new UnaryOp{ op, operand };
+}
+
+
+static 
+array<scoped_ptr<CmpOpKind>> generate_cmp_op_array(const std::string &input, size_t &pos) {
+    assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    if (input[pos] == ']') {
+        pos++;
+        return {};
+    }
+
+    std::vector<scoped_ptr<CmpOpKind>> ops;
+    while (true) {
+        scoped_ptr<CmpOpKind> op = conv_or<OperatorKind, CmpOpKind>(generate_operator_kind(input, pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+        ops.emplace_back(std::move(op));
+        if (input[pos] == ',' && input[pos + 1] == ' ') {
+            pos += 2;
+            continue;
+        }
+        break;
+    }
+    
+    array<scoped_ptr<CmpOpKind>> res = std::move(ops);
+    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return res;
+}
+
+
+static
+scoped_ptr<Expr> generate_compare(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Compare(left=", pos));
+
+    pos += sizeof("Compare(left=") - 1;
+    
+    scoped_ptr<Expr> left = generate_expr(input, pos);
+    assume(sstrcmp(input, ", ops=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", ops=") - 1;
+
+    array<scoped_ptr<CmpOpKind>> ops = generate_cmp_op_array(input, pos);
+
+    assume(sstrcmp(input, ", comparators=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", comparators=") - 1;
+
+    array<scoped_ptr<Expr>> comparators = generate_expr_array(input, pos);
+
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new Compare{ left, ops, comparators };
+}
+
+
+static
+scoped_ptr<Expr> generate_call(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Call(func=", pos));
+
+    pos += sizeof("Call(func=") - 1;
+    scoped_ptr<Expr> func = generate_expr(input, pos);
+    
+    assume(sstrcmp(input, ", args=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", args=") - 1;
+
+    array<scoped_ptr<Expr>> args = generate_expr_array(input, pos);
+
+    assume(sstrcmp(input, ", keywords=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", keywords=[])") - 1;
+    return new Call{ func, args };
+}
+
+
+size_t try_tokenize_int(const std::string &str, size_t cursor_pos) {
+    size_t int_len = 0;
+    if (str[cursor_pos] == '-') {
+        int_len++;
+        cursor_pos++;
+    }
+    if (cursor_pos == str.size()) {
+        return 0;
+    }
+    while (isdigit(str[cursor_pos])) {
+        int_len++;
+        cursor_pos++;
+        if (cursor_pos == str.size()) {
+            break;
+        }
+    }
+
+    return int_len;
+}
+
+
+size_t try_tokenize_float(const std::string &str, size_t cursor_pos) {
+    size_t float_first_part_len = try_tokenize_int(str, cursor_pos);
+    if (float_first_part_len == 0) {
+        return 0;
+    }
+    cursor_pos += float_first_part_len;
+
+    if (str[cursor_pos] != '.') {
+        return 0;
+    }
+    cursor_pos++;
+    size_t float_second_part_len = try_tokenize_int(str, cursor_pos);
+    return float_first_part_len + float_second_part_len + 1;
+}
+
+
+
+static 
+scoped_ptr<YPrimitiveObject> generate_constant_value(const std::string &input, size_t &pos) {
+    if (input[pos] == '\'') {
+        std::string val = extract_delimited_substring(input, pos);
+        pos += val.size() + 2;
+        scoped_ptr<YPrimitiveObject> obj = new YStringObject{ val };
+        return obj;
+    }
+
+    size_t possible_float_len = try_tokenize_float(input, pos);
+    if (possible_float_len != 0) {
+        std::string s_val = input.substr(pos, possible_float_len);
+        pos += possible_float_len;
+        double val = from_str<double>(s_val);
+        scoped_ptr<YPrimitiveObject> obj = new YFloatObject{ val };
+        return obj;
+    }
+
+    size_t possible_int_len = try_tokenize_int(input, pos);
+    if (possible_int_len != 0) {
+        std::string s_val = input.substr(pos, possible_int_len);
+        pos += possible_int_len;
+        ssize_t val = from_str<ssize_t>(s_val);
+        scoped_ptr<YPrimitiveObject> obj = new YIntObject{ val };
+        return obj;
+    }
+
+    parse_error(pos, __FILE__, std::to_string(__LINE__));
+}
+
+
+static
+scoped_ptr<Expr> generate_constant(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Constant(value=", pos));
+
+    pos += sizeof("Constant(value=") - 1;
+    scoped_ptr<YPrimitiveObject> value = generate_constant_value(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    return new Constant{ value };
+}
+
+
+static
+scoped_ptr<ExprContext> generate_expr_context(const std::string &input, size_t &pos) {
+    if (sstrcmp(input, "Load()", pos)) {
+        pos += sizeof("Load()") - 1;
+        return new Load{};
+    }
+    if (sstrcmp(input, "Store()", pos)) {
+        pos += sizeof("Store()") - 1;
+        return new Store{};
+    }
+    if (sstrcmp(input, "Del()", pos)) {
+        pos += sizeof("Del()") - 1;
+        return new Del{};
+    }
+
+    parse_error(pos, __FILE__, std::to_string(__LINE__));
+}
+
+
+static
+scoped_ptr<Expr> generate_attribute(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Attribute(value=", pos));
+
+    pos += sizeof("Attribute(value=") - 1;
+    scoped_ptr<Expr> value = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", attr=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", attr=") - 1;
+    std::string attr = extract_delimited_substring(input, pos);
+    pos += attr.size() + 2;
+    
+    assume(sstrcmp(input, ", ctx=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", ctx=") - 1;
+
+    scoped_ptr<ExprContext> ctx = generate_expr_context(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new Attribute{ value, attr, ctx };
+}
+
+
+static
+scoped_ptr<Expr> generate_subscript(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Subscript(value=", pos));
+
+    pos += sizeof("Subscript(value=") - 1;
+    scoped_ptr<Expr> value = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", slice=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", slice=") - 1;
+
+    scoped_ptr<Expr> slice = generate_expr(input, pos);
+    assume(sstrcmp(input, ", ctx=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", ctx=") - 1;
+
+    scoped_ptr<ExprContext> ctx = generate_expr_context(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new Subscript{ value, slice, ctx };
+}
+
+
+static 
+scoped_ptr<Expr> generate_name(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Name(id=", pos));
+
+    pos += sizeof("Name(id=") - 1;
+    std::string name = extract_delimited_substring(input, pos);
+    pos += name.size() + 2;
+
+    assume(sstrcmp(input, ", ctx=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", ctx=") - 1;
+
+    scoped_ptr<ExprContext> ctx = generate_expr_context(input, pos);
+
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new Name{ name, ctx };
+}
+
+
+static
 scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
     if (sstrcmp(input, "BoolOp(op=", pos)) {
         return generate_bool_op(input, pos);
     }
-
+    if (sstrcmp(input, "BinOp(left=", pos)) {
+        return generate_bin_op(input, pos);
+    }
+    if (sstrcmp(input, "UnaryOp(op=", pos)) {
+        return generate_unary_op(input, pos);
+    }
+    if (sstrcmp(input, "Compare(left=", pos)) {
+        return generate_compare(input, pos);
+    }
+    if (sstrcmp(input, "Call(func=", pos)) {
+        return generate_call(input, pos);
+    }
+    if (sstrcmp(input, "Constant(value=", pos)) {
+        return generate_constant(input, pos);
+    }
+    if (sstrcmp(input, "Attribute(value=", pos)) {
+        return generate_attribute(input, pos);
+    }
+    if (sstrcmp(input, "Subscript(value=", pos)) {
+        return generate_subscript(input, pos);
+    }
+    if (sstrcmp(input, "Name(id=", pos)) {
+        return generate_name(input, pos);
+    }
     parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
 
@@ -622,6 +920,6 @@ scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
 scoped_ptr<Module> yapvm::parser::generate_ast(const std::string &input) {
     size_t pos = 0;
     scoped_ptr<Module> module = generate_module(input, pos);
-    assume(pos == input.size() - 1, [] { throw std::runtime_error("AST generation error"); });
+    assume(pos == input.size(), [] { throw std::runtime_error("AST generation error"); });
     return module;
 }

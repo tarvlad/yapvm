@@ -40,6 +40,7 @@ class UnaryOpKind : public OperatorKind {};
 
 class Invert : public UnaryOpKind {};
 class Not : public UnaryOpKind {};
+class USub : public UnaryOpKind {};
 
 
 class BinOpKind : public OperatorKind {};

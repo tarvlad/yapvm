@@ -102,7 +102,7 @@ std::string yapvm::extract_delimited_substring(const std::string &str, size_t po
         }
     }
     if (end_pos == std::string::npos) {
-        return "";
+        throw std::invalid_argument("Not <<...>>");
     }
     std::string result = str.substr(pos + 1, end_pos - pos + 1 - 1);
     return result;

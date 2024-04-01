@@ -11,32 +11,43 @@ def dot_product_chunk(start, end, vector1, vector2, result, lock):
 def dot_product(vector1, vector2):    
     vector_size = len(vector1)
     if vector_size <= 512:
-        # For small vectors, compute dot product directly
-        return sum(vector1[i] * vector2[i] for i in range(vector_size))
+        total = 0
+        for i in range(vector_size):
+            total += vector1[i] * vector2[i]
+        return total
     else:
-        # For large vectors, use multithreading
-        num_threads = 8  # Number of threads to use
+        num_threads = 8
         chunk_size = vector_size // num_threads
-        threads = []
-        result = [0]  # Use a list to hold the result so it can be modified by threads
-        lock = threading.Lock()  # Lock for updating the result safely
+        threads = list()
+        result = list()
+        result.append(0)
+        lock = threading.Lock()
         
         for i in range(num_threads):
             start = i * chunk_size
-            end = (i + 1) * chunk_size if i < num_threads - 1 else vector_size
-            thread = threading.Thread(target=dot_product_chunk, args=(start, end, vector1, vector2, result, lock))
+            if i < num_threads - 1:
+                end = (i + 1) * chunk_size
+            else:
+                end = vector_size
+            thread = threading.Thread(dot_product_chunk, start, end, vector1, vector2, result, lock)  # Removed named keywords
             threads.append(thread)
             thread.start()
-        
-        # Wait for all threads to complete
+
         for thread in threads:
             thread.join()
         
         return result[0]
 
 # Example usage
-vector1 = [1, 2, 3, 4, 5] * 200  # Example vector (size 1000)
-vector2 = [5, 4, 3, 2, 1] * 200  # Example vector (size 1000)
+vector1 = list()
+vector2 = list()
+
+# Populating the vectors without using direct list declarations
+for _ in range(200):
+    for i in range(1, 6):  # Equivalent to [1, 2, 3, 4, 5]
+        vector1.append(i)
+    for i in range(5, 0, -1):  # Equivalent to [5, 4, 3, 2, 1]
+        vector2.append(i)
 
 result = dot_product(vector1, vector2)
 print(result)
