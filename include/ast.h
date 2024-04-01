@@ -64,6 +64,13 @@ class And : public BoolOpKind {};
 class Or : public BoolOpKind {};
 
 
+class ExprContext : public Node {};
+
+class Load : public ExprContext {};
+class Store : public ExprContext {};
+class Del : public ExprContext {};
+
+
 class Expr : public Node {};
 
 
@@ -82,54 +89,55 @@ public:
 
 
 class BoolOp : public Expr {
-    BoolOpKind op_;
+    scoped_ptr<BoolOpKind> op_;
     array<scoped_ptr<Expr>> values_;
 
 public:
-    BoolOp(BoolOpKind op, const array<scoped_ptr<Expr>> &values);
+    BoolOp(const scoped_ptr<BoolOpKind> &op, const array<scoped_ptr<Expr>> &values);
 
-    BoolOpKind op() const;
+    const scoped_ptr<BoolOpKind> &op() const;
     const array<scoped_ptr<Expr>> &values() const;
 };
 
+
 class BinOp : public Expr {
     scoped_ptr<Expr> left_;
-    BinOpKind op_;
+    scoped_ptr<BinOpKind> op_;
     scoped_ptr<Expr> right_;
 
 public:
-    BinOp(const scoped_ptr<Expr> &left, BinOpKind op, const scoped_ptr<Expr> &right);
+    BinOp(const scoped_ptr<Expr> &left, const scoped_ptr<BinOpKind> &op, const scoped_ptr<Expr> &right);
 
     const scoped_ptr<Expr> &left() const;
     const scoped_ptr<Expr> &right() const;
-    BinOpKind op() const;
+    const scoped_ptr<BinOpKind> &op() const;
 };
 
 class UnaryOp : public Expr {
-    UnaryOpKind op_;
+    scoped_ptr<UnaryOpKind> op_;
     scoped_ptr<Expr> operand_;
 
 public:
-    UnaryOp(UnaryOpKind op, const scoped_ptr<Expr> &operand);
+    UnaryOp(const scoped_ptr<UnaryOpKind> &op, const scoped_ptr<Expr> &operand);
 
-    UnaryOpKind op() const;
+    const scoped_ptr<UnaryOpKind> &op() const;
     const scoped_ptr<Expr> &operand() const;
 };
 
 class Compare : public Expr {
     scoped_ptr<Expr> left_;
-    array<CmpOpKind> ops_;
+    array<scoped_ptr<CmpOpKind>> ops_;
     array<scoped_ptr<Expr>> comparators_;
 
 public:
     Compare(
         const scoped_ptr<Expr> &left, 
-        const array<CmpOpKind> &ops, 
+        const array<scoped_ptr<CmpOpKind>> &ops, 
         const array<scoped_ptr<Expr>> &comparators
     );
 
     const scoped_ptr<Expr> &left() const;
-    const array<CmpOpKind> &ops() const;
+    const array<scoped_ptr<CmpOpKind>> &ops() const;
     const array<scoped_ptr<Expr>> &comparators() const;
 };
 
@@ -159,10 +167,12 @@ public:
 class Attribute : public Expr {
     scoped_ptr<Expr> value_;
     std::string attr_;
+    scoped_ptr<ExprContext> ctx_;
 
 public:
-    Attribute(const scoped_ptr<Expr> &value, const std::string &attr);
+    Attribute(const scoped_ptr<Expr> &value, const std::string &attr, const scoped_ptr<ExprContext> &ctx);
 
+    const scoped_ptr<ExprContext> &ctx() const;
     const scoped_ptr<Expr> &value() const;
     const std::string &attr() const;
 };
@@ -171,10 +181,12 @@ public:
 class Subscript : public Expr {
     scoped_ptr<Expr> value_;
     scoped_ptr<Expr> key_;
+    scoped_ptr<ExprContext> ctx_;
 
 public:
-    Subscript(const scoped_ptr<Expr> &value, const scoped_ptr<Expr> &key);
+    Subscript(const scoped_ptr<Expr> &value, const scoped_ptr<Expr> &key, const scoped_ptr<ExprContext> &ctx);
 
+    const scoped_ptr<ExprContext> &ctx() const;
     const scoped_ptr<Expr> &key() const;
     const scoped_ptr<Expr> &value() const;
 };
@@ -182,10 +194,12 @@ public:
 
 class Name : public Expr {
     std::string id_;
+    scoped_ptr<ExprContext> ctx_;
 
 public:
-    Name(const std::string &id);
+    Name(const std::string &id, const scoped_ptr<ExprContext> &ctx);
 
+    const scoped_ptr<ExprContext> &ctx() const;
     const std::string &id() const;
 };
 
@@ -268,14 +282,14 @@ public:
 
 class AugAssign : public Stmt {
     scoped_ptr<Expr> target_;
-    BinOpKind op_;
+    scoped_ptr<BinOpKind> op_;
     scoped_ptr<Expr> value_;
 
 public:
-    AugAssign(const scoped_ptr<Expr> &target, BinOpKind op, const scoped_ptr<Expr> &value);
+    AugAssign(const scoped_ptr<Expr> &target, const scoped_ptr<BinOpKind> &op, const scoped_ptr<Expr> &value);
 
     const scoped_ptr<Expr> &target() const;
-    BinOpKind op() const;
+    const scoped_ptr<BinOpKind> &op() const;
     const scoped_ptr<Expr> &value() const;
 };
 

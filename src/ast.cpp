@@ -5,11 +5,11 @@
 using namespace yapvm::ast;
 using namespace yapvm;
 
-yapvm::ast::BoolOp::BoolOp(BoolOpKind op, const array<scoped_ptr<Expr>> &values) 
+yapvm::ast::BoolOp::BoolOp(const scoped_ptr<BoolOpKind> &op, const array<scoped_ptr<Expr>> &values) 
     : op_{ op }, values_{ values } {}
 
 
-BoolOpKind yapvm::ast::BoolOp::op() const {
+const scoped_ptr<BoolOpKind> &yapvm::ast::BoolOp::op() const {
     return op_;
 }
 
@@ -19,12 +19,12 @@ const array<scoped_ptr<Expr>> &yapvm::ast::BoolOp::values() const {
 }
 
 
-yapvm::ast::BinOp::BinOp(const scoped_ptr<Expr> &left, BinOpKind op, const scoped_ptr<Expr> &right)
+yapvm::ast::BinOp::BinOp(const scoped_ptr<Expr> &left, const scoped_ptr<BinOpKind> &op, const scoped_ptr<Expr> &right)
     : left_{ left }, right_{ right }, op_{ op } {
 }
 
 
-BinOpKind yapvm::ast::BinOp::op() const {
+const scoped_ptr<BinOpKind> &yapvm::ast::BinOp::op() const {
     return op_;
 }
 
@@ -39,12 +39,12 @@ const scoped_ptr<Expr> &yapvm::ast::BinOp::right() const {
 }
 
 
-yapvm::ast::UnaryOp::UnaryOp(UnaryOpKind op, const scoped_ptr<Expr> &operand) 
+yapvm::ast::UnaryOp::UnaryOp(const scoped_ptr<UnaryOpKind> &op, const scoped_ptr<Expr> &operand)
     : op_{ op }, operand_{ operand } {
 }
 
 
-UnaryOpKind yapvm::ast::UnaryOp::op() const {
+const scoped_ptr<UnaryOpKind> &yapvm::ast::UnaryOp::op() const {
     return op_;
 }
 
@@ -54,7 +54,7 @@ const scoped_ptr<Expr> &yapvm::ast::UnaryOp::operand() const {
 }
 
 
-yapvm::ast::Compare::Compare(const scoped_ptr<Expr> &left, const array<CmpOpKind> &ops, const array<scoped_ptr<Expr>> &comparators)
+yapvm::ast::Compare::Compare(const scoped_ptr<Expr> &left, const array<scoped_ptr<CmpOpKind>> &ops, const array<scoped_ptr<Expr>> &comparators)
     : left_{ left }, ops_{ ops }, comparators_{ comparators } {
 }
 
@@ -64,7 +64,7 @@ const scoped_ptr<Expr> &yapvm::ast::Compare::left() const {
 }
 
 
-const array<CmpOpKind> &yapvm::ast::Compare::ops() const {
+const array<scoped_ptr<CmpOpKind>> &yapvm::ast::Compare::ops() const {
     return ops_;
 }
 
@@ -97,8 +97,13 @@ const scoped_ptr<YPrimitiveObject> &yapvm::ast::Constant::value() const {
     return value_;
 }
 
-yapvm::ast::Attribute::Attribute(const scoped_ptr<Expr> &value, const std::string &attr)
-    : value_{ value }, attr_{ attr } {
+yapvm::ast::Attribute::Attribute(const scoped_ptr<Expr> &value, const std::string &attr, const scoped_ptr<ExprContext> &ctx)
+    : value_{ value }, attr_{ attr }, ctx_{ ctx } {
+}
+
+
+const scoped_ptr<ExprContext> &yapvm::ast::Attribute::ctx() const {
+    return ctx_;
 }
 
 
@@ -112,8 +117,13 @@ const std::string &yapvm::ast::Attribute::attr() const {
 }
 
 
-yapvm::ast::Subscript::Subscript(const scoped_ptr<Expr> &value, const scoped_ptr<Expr> &key)
-    : key_{ key }, value_{ value } {
+yapvm::ast::Subscript::Subscript(const scoped_ptr<Expr> &value, const scoped_ptr<Expr> &key, const scoped_ptr<ExprContext> &ctx)
+    : key_{ key }, value_{ value }, ctx_{ ctx } {
+}
+
+
+const scoped_ptr<ExprContext> &yapvm::ast::Subscript::ctx() const {
+    return ctx_;
 }
 
 
@@ -127,8 +137,13 @@ scoped_ptr<Expr> &yapvm::ast::Subscript::value() const {
 }
 
 
-yapvm::ast::Name::Name(const std::string &id)
-    : id_{ id } {
+yapvm::ast::Name::Name(const std::string &id, const scoped_ptr<ExprContext> &ctx)
+    : id_{ id }, ctx_{ ctx } {
+}
+
+
+const scoped_ptr<ExprContext> &yapvm::ast::Name::ctx() const {
+    return ctx_;
 }
 
 
@@ -215,7 +230,7 @@ const scoped_ptr<Expr> &yapvm::ast::Assign::value() const {
 }
 
 
-yapvm::ast::AugAssign::AugAssign(const scoped_ptr<Expr> &target, BinOpKind op, const scoped_ptr<Expr> &value)
+yapvm::ast::AugAssign::AugAssign(const scoped_ptr<Expr> &target, const scoped_ptr<BinOpKind> &op, const scoped_ptr<Expr> &value)
     : target_{ target }, op_{ op }, value_{ value } {
 }
 
@@ -225,7 +240,7 @@ const scoped_ptr<Expr> &yapvm::ast::AugAssign::target() const {
 }
 
 
-BinOpKind yapvm::ast::AugAssign::op() const {
+const scoped_ptr<BinOpKind> &yapvm::ast::AugAssign::op() const {
     return op_;
 }
 

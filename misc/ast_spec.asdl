@@ -81,14 +81,17 @@ module yapvm {
         )
         | Attribute(
             expr value, 
-            identifier attr
+            identifier attr,
+            expr_context ctx
         )
         | Subscript(
             expr value,
-            expr key
+            expr key,
+            expr_context ctx
         )
         | Name(
-            identifier id
+            identifier id,
+            expr_context ctx
         )
         | List
         | Dict

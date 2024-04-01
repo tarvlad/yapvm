@@ -140,7 +140,24 @@ public:
     operator T *() const {
         return ptr_;
     }
+
+    T *steal() noexcept {
+        T *res = ptr_;
+        ptr_ = nullptr;
+        return res;
+    }
 };
+
+
+template <typename T, typename W, typename Callable, typename... Args>
+scoped_ptr<W> conv_or(scoped_ptr<T> &&s, Callable call_if_error, Args&&... args) {
+    T *t_val = s.steal();
+    W *w_val = dynamic_cast<W *>(t_val);
+    if (w_val == nullptr) {
+        std::invoke(call_if_error, std::forward<Args>(args)...);
+    }
+    return w_val;
+}
 
 
 template<typename Callable, typename... Args>

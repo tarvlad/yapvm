@@ -219,7 +219,7 @@ generate_aug_assign(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", op=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", op=") - 1;
 
-    scoped_ptr<OperatorKind> op = generate_operator_kind(input, pos);
+    scoped_ptr<BinOpKind> op = conv_or<OperatorKind, BinOpKind>(generate_operator_kind(input, pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
 
     assume(sstrcmp(input, ", value=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", value=") - 1;
@@ -229,10 +229,7 @@ generate_aug_assign(const std::string &input, size_t &pos) {
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    BinOpKind *b_op = dynamic_cast<BinOpKind *>(op.get());
-    assume(b_op != nullptr, parse_error, pos, __FILE__, std::to_string(__LINE__));
-
-    return new AugAssign{ target, *b_op, value };
+    return new AugAssign{ target, op, value };
 }
 
 
@@ -594,9 +591,31 @@ scoped_ptr<OperatorKind> generate_operator_kind(const std::string &input, size_t
 }
 
 
+static 
+scoped_ptr<Expr> generate_bool_op(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "BoolOp(op=", pos));
+
+    pos += sizeof("BoolOp(op=") - 1;
+    scoped_ptr<BoolOpKind> op = conv_or<OperatorKind, BoolOpKind>(generate_operator_kind(input, pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+
+    assume(sstrcmp(input, ", values=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", values=") - 1;
+
+    array<scoped_ptr<Expr>> body = generate_expr_array(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    return new BoolOp{ op, body };
+}
+
+
 static
 scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
-    throw std::runtime_error("Not implemented currently"); //TODO
+    if (sstrcmp(input, "BoolOp(op=", pos)) {
+        return generate_bool_op(input, pos);
+    }
+
+    parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
 
 
