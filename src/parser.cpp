@@ -229,7 +229,10 @@ generate_aug_assign(const std::string &input, size_t &pos) {
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    return new AugAssign{ target, *op, value };
+    BinOpKind *b_op = dynamic_cast<BinOpKind *>(op.get());
+    assume(b_op != nullptr, parse_error, pos, __FILE__, std::to_string(__LINE__));
+
+    return new AugAssign{ target, *b_op, value };
 }
 
 
@@ -482,7 +485,112 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
 
 static
 scoped_ptr<OperatorKind> generate_operator_kind(const std::string &input, size_t &pos) {
-    throw std::runtime_error("Not implemented currently"); //TODO
+    if (sstrcmp(input, "Not()", pos)) {
+        pos += sizeof("Not()") - 1;
+        return new Not{};
+    }
+    if (sstrcmp(input, "Invert()", pos)) {
+        pos += sizeof("Invert()") - 1;
+        return new Invert{};
+    }
+    if (sstrcmp(input, "Add()", pos)) {
+        pos += sizeof("Add()") - 1;
+        return new Add{};
+    }
+    if (sstrcmp(input, "Sub()", pos)) {
+        pos += sizeof("Sub()") - 1;
+        return new Sub{};
+    }
+    if (sstrcmp(input, "Mult()", pos)) {
+        pos += sizeof("Mult()") - 1;
+        return new Mult{};
+    }
+    if (sstrcmp(input, "Div()", pos)) {
+        pos += sizeof("Div()") - 1;
+        return new Div{};
+    }
+    if (sstrcmp(input, "FloorDiv()", pos)) {
+        pos += sizeof("FloorDiv()") - 1;
+        return new FloorDiv{};
+    }
+    if (sstrcmp(input, "Mod()", pos)) {
+        pos += sizeof("Mod()") - 1;
+        return new Mod{};
+    }
+    if (sstrcmp(input, "Pow()", pos)) {
+        pos += sizeof("Pow()") - 1;
+        return new Pow{};
+    }
+    if (sstrcmp(input, "LShift()", pos)) {
+        pos += sizeof("LShift()") - 1;
+        return new LShift{};
+    }
+    if (sstrcmp(input, "RShift()", pos)) {
+        pos += sizeof("RShift()") - 1;
+        return new RShift{};
+    }
+    if (sstrcmp(input, "BitOr()", pos)) {
+        pos += sizeof("BitOr()") - 1;
+        return new BitOr{};
+    }
+    if (sstrcmp(input, "BitXor()", pos)) {
+        pos += sizeof("BitXor()") - 1;
+        return new BitXor{};
+    }
+    if (sstrcmp(input, "BitAnd()", pos)) {
+        pos += sizeof("BitAnd()") - 1;
+        return new BitAnd{};
+    }
+    if (sstrcmp(input, "And()", pos)) {
+        pos += sizeof("And()") - 1;
+        return new And{};
+    }
+    if (sstrcmp(input, "Or()", pos)) {
+        pos += sizeof("Or()") - 1;
+        return new Or{};
+    }
+    if (sstrcmp(input, "Eq()", pos)) {
+        pos += sizeof("Eq()") - 1;
+        return new Eq{};
+    }
+    if (sstrcmp(input, "NotEq()", pos)) {
+        pos += sizeof("NotEq()") - 1;
+        return new NotEq{};
+    }
+    if (sstrcmp(input, "Lt()", pos)) {
+        pos += sizeof("Lt()") - 1;
+        return new Lt{};
+    }
+    if (sstrcmp(input, "LtE()", pos)) {
+        pos += sizeof("LtE()") - 1;
+        return new LtE{};
+    }
+    if (sstrcmp(input, "Gt()", pos)) {
+        pos += sizeof("Gt()") - 1;
+        return new Gt{};
+    }
+    if (sstrcmp(input, "GtE()", pos)) {
+        pos += sizeof("GtE()") - 1;
+        return new GtE{};
+    }
+    if (sstrcmp(input, "Is()", pos)) {
+        pos += sizeof("Is()") - 1;
+        return new Is{};
+    }
+    if (sstrcmp(input, "IsNot()", pos)) {
+        pos += sizeof("IsNot()") - 1;
+        return new IsNot{};
+    }
+    if (sstrcmp(input, "In()", pos)) {
+        pos += sizeof("In()") - 1;
+        return new In{};
+    }
+    if (sstrcmp(input, "NotIn()", pos)) {
+        pos += sizeof("NotIn()") - 1;
+        return new NotIn{};
+    }
+
+    parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
 
 

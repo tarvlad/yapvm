@@ -18,7 +18,11 @@ public:
     virtual ~Node() = default;
 };
 
-class CmpOpKind : public Node {};
+
+class OperatorKind : public Node {};
+
+
+class CmpOpKind : public OperatorKind {};
 
 class Eq : public CmpOpKind {};
 class NotEq : public CmpOpKind {};
@@ -26,31 +30,35 @@ class Lt : public CmpOpKind {};
 class LtE : public CmpOpKind {};
 class Gt : public CmpOpKind {};
 class GtE : public CmpOpKind {};
+class Is : public CmpOpKind {};
+class IsNot : public CmpOpKind {};
+class In : public CmpOpKind {};
+class NotIn : public CmpOpKind {};
 
 
-class UnaryOpKind : public Node {};
+class UnaryOpKind : public OperatorKind {};
 
 class Invert : public UnaryOpKind {};
 class Not : public UnaryOpKind {};
 
 
-class OperatorKind : public Node {};
+class BinOpKind : public OperatorKind {};
 
-class Add : public OperatorKind {};
-class Sub : public OperatorKind {};
-class Mult : public OperatorKind {};
-class Div : public OperatorKind {};
-class Mod : public OperatorKind {};
-class Pow : public OperatorKind {};
-class LShift : public OperatorKind {};
-class RShift : public OperatorKind {};
-class BitOr : public OperatorKind {};
-class BitXor : public OperatorKind {};
-class BitAnd : public OperatorKind {};
-class FloorDiv : public OperatorKind {};
+class Add : public BinOpKind {};
+class Sub : public BinOpKind {};
+class Mult : public BinOpKind {};
+class Div : public BinOpKind {};
+class Mod : public BinOpKind {};
+class Pow : public BinOpKind {};
+class LShift : public BinOpKind {};
+class RShift : public BinOpKind {};
+class BitOr : public BinOpKind {};
+class BitXor : public BinOpKind {};
+class BitAnd : public BinOpKind {};
+class FloorDiv : public BinOpKind {};
 
 
-class BoolOpKind : public Node {};
+class BoolOpKind : public OperatorKind {};
 
 class And : public BoolOpKind {};
 class Or : public BoolOpKind {};
@@ -86,15 +94,15 @@ public:
 
 class BinOp : public Expr {
     scoped_ptr<Expr> left_;
-    OperatorKind op_;
+    BinOpKind op_;
     scoped_ptr<Expr> right_;
 
 public:
-    BinOp(const scoped_ptr<Expr> &left, OperatorKind op, const scoped_ptr<Expr> &right);
+    BinOp(const scoped_ptr<Expr> &left, BinOpKind op, const scoped_ptr<Expr> &right);
 
     const scoped_ptr<Expr> &left() const;
     const scoped_ptr<Expr> &right() const;
-    OperatorKind op() const;
+    BinOpKind op() const;
 };
 
 class UnaryOp : public Expr {
@@ -260,14 +268,14 @@ public:
 
 class AugAssign : public Stmt {
     scoped_ptr<Expr> target_;
-    OperatorKind op_;
+    BinOpKind op_;
     scoped_ptr<Expr> value_;
 
 public:
-    AugAssign(const scoped_ptr<Expr> &target, OperatorKind op, const scoped_ptr<Expr> &value);
+    AugAssign(const scoped_ptr<Expr> &target, BinOpKind op, const scoped_ptr<Expr> &value);
 
     const scoped_ptr<Expr> &target() const;
-    OperatorKind op() const;
+    BinOpKind op() const;
     const scoped_ptr<Expr> &value() const;
 };
 

@@ -19,12 +19,12 @@ const array<scoped_ptr<Expr>> &yapvm::ast::BoolOp::values() const {
 }
 
 
-yapvm::ast::BinOp::BinOp(const scoped_ptr<Expr> &left, OperatorKind op, const scoped_ptr<Expr> &right)
+yapvm::ast::BinOp::BinOp(const scoped_ptr<Expr> &left, BinOpKind op, const scoped_ptr<Expr> &right)
     : left_{ left }, right_{ right }, op_{ op } {
 }
 
 
-OperatorKind yapvm::ast::BinOp::op() const {
+BinOpKind yapvm::ast::BinOp::op() const {
     return op_;
 }
 
@@ -215,7 +215,7 @@ const scoped_ptr<Expr> &yapvm::ast::Assign::value() const {
 }
 
 
-yapvm::ast::AugAssign::AugAssign(const scoped_ptr<Expr> &target, OperatorKind op, const scoped_ptr<Expr> &value)
+yapvm::ast::AugAssign::AugAssign(const scoped_ptr<Expr> &target, BinOpKind op, const scoped_ptr<Expr> &value)
     : target_{ target }, op_{ op }, value_{ value } {
 }
 
@@ -225,7 +225,7 @@ const scoped_ptr<Expr> &yapvm::ast::AugAssign::target() const {
 }
 
 
-OperatorKind yapvm::ast::AugAssign::op() const {
+BinOpKind yapvm::ast::AugAssign::op() const {
     return op_;
 }
 
