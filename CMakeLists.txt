@@ -4,9 +4,9 @@ project(yapvm)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+//set(CMAKE_CXX_FLAGS "-stdlib=libc++")
              
 include_directories(include)
-
 
 set(SOURCE_ALL
     include/parser.h
@@ -20,6 +20,9 @@ set(SOURCE_ALL
 
     include/y_objects.h
     src/y_objects.cpp
+
+    include/gc.h
+    src/gc.cpp
 )
 
 
