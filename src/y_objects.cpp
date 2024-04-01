@@ -1,5 +1,6 @@
 #include "y_objects.h"
-
+#include <stdexcept>
+#include <vector>
 
 using namespace yapvm::yobjects;
 
@@ -48,7 +49,7 @@ YListObject::YListObject(const std::vector<YObject> &value) {
 YListObject::YListObject(const YListObject &value) : list_{ value.list_ } {}
 
 
-YListObject& YListObject::operator=(const YListObject &other) {
+YListObject &YListObject::operator=(const YListObject &other) {
     if (&other == this) {
         return *this;
     }
@@ -63,7 +64,7 @@ const std::deque<YObject> &YListObject::value() const {
 
 
 const YObject &YListObject::operator[](size_t index) const {
-    if (index > list_.size()) {
+    if (index >= list_.size()) {
         throw std::range_error("IndexError: list index out of range");
     }
     return list_.at(index);
@@ -71,7 +72,7 @@ const YObject &YListObject::operator[](size_t index) const {
 
 
 YListObject YListObject::operator+(const YListObject &other) {
-    YListObject tmp {list_};
+    YListObject tmp{ list_ };
     for (YObject element : other.list_) {
         tmp.list_.push_back(element);
     }
@@ -88,47 +89,18 @@ size_t YListObject::size() const {
     return list_.size();
 }
 
-//Broken Dict
-/*
-YDictObject::YDictObject(const YDictObject &value) : dict_{ value.dict_ } {}
-
-
-YDictObject &YDictObject::operator=(const YDictObject &other) {
-    dict_ = other.dict_;
-}
-
-
-void YDictObject::add(const YObject &key, const YObject &value) {
-
-    dict_[key] = value;
-}
-
-
-const YObject &YDictObject::get(const YObject &key) const {
-    if (dict_.find(key) == dict_.end()) {
-        throw std::runtime_error("Key error");
-    }
-    return dict_.at(key);
-}
-
-
-const YObject &YDictObject::operator[](const YObject& key) const {
-    return get(key);
-}
-*/
-
 
 YTupleObject::YTupleObject(size_t size) : tuple_{ size } {}
 
 
-YTupleObject::YTupleObject(const std::vector<YObject> &value) : YTupleObject(value.size())   {
+YTupleObject::YTupleObject(const std::vector<YObject> &value) : YTupleObject(value.size()) {
     for (size_t i = 0; i < value.size(); i++) {
         tuple_[i] = value[i];
     }
 }
 
 
-YTupleObject::YTupleObject(const YTupleObject& other) : tuple_{ other.tuple_ } {}
+YTupleObject::YTupleObject(const YTupleObject &other) : tuple_{ other.tuple_ } {}
 
 
 YTupleObject &YTupleObject::operator=(const YTupleObject &other) {
@@ -141,7 +113,7 @@ YTupleObject &YTupleObject::operator=(const YTupleObject &other) {
 
 
 const YObject &YTupleObject::operator[](size_t index) const {
-    if (index > tuple_.size()) {
+    if (index >= tuple_.size()) {
         throw std::range_error("IndexError: list index out of range");
     }
     return tuple_[index];
