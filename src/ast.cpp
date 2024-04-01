@@ -296,3 +296,62 @@ yapvm::ast::Import::Import(const std::string &name) : name_{ name }{}
 const std::string &yapvm::ast::Import::name() const {
     return name_;
 }
+
+
+yapvm::ast::For::For(const scoped_ptr<Expr> &target, const scoped_ptr<Expr> &iter, const array<scoped_ptr<Stmt>> &body) 
+    : target_{ target }, iter_{ iter }, body_{ body } {
+}
+
+
+const scoped_ptr<Expr> &yapvm::ast::For::target() const {
+    return target_;
+}
+
+
+const scoped_ptr<Expr> &yapvm::ast::For::iter() const {
+    return iter_;;
+}
+
+
+const array<scoped_ptr<Stmt>> &yapvm::ast::For::body() const {
+    return body_;
+}
+
+
+yapvm::ast::WithItem::WithItem(const scoped_ptr<Expr> &context_expr)
+    : context_expr_{ context_expr }, optional_vars_{ nullptr } {
+}
+
+
+yapvm::ast::WithItem::WithItem(const scoped_ptr<Expr> &context_expr, const scoped_ptr<Expr> &optional_vars)
+    : context_expr_{ context_expr }, optional_vars_{ optional_vars } {
+}
+
+
+const scoped_ptr<Expr> &yapvm::ast::WithItem::context_expr() const {
+    return context_expr_;
+}
+
+
+const scoped_ptr<Expr> &yapvm::ast::WithItem::optional_vars() const {
+    return optional_vars_;
+}
+
+
+bool yapvm::ast::WithItem::is_optional_var() const {
+    return optional_vars_ != nullptr;
+}
+
+
+yapvm::ast::With::With(const array<scoped_ptr<WithItem>> &items, const array<scoped_ptr<Stmt>> &body)
+    : items_{ items }, body_{ body } {}
+
+
+const array<scoped_ptr<WithItem>> &yapvm::ast::With::items() const {
+    return items_;
+}
+
+
+const array<scoped_ptr<Stmt>> &yapvm::ast::With::body() const {
+    return body_;
+}

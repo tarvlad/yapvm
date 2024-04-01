@@ -253,6 +253,97 @@ scoped_ptr<Stmt> generate_while(const std::string &input, size_t &pos) {
 
 
 static
+scoped_ptr<Stmt> generate_for(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "For(target=", pos));
+
+    pos += sizeof("For(target=") - 1;
+    scoped_ptr<Expr> target = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", iter=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", iter=") - 1;
+
+    scoped_ptr<Expr> iter = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", body=") - 1;
+    
+    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    
+    assume(sstrcmp(input, ", orelse=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", orelse=[])") - 1;
+
+    return new For{ target, iter, body };
+}
+
+
+static 
+scoped_ptr<WithItem> generate_withitem(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "withitem(context_expr=", pos));
+    pos += sizeof("withitem(context_expr=") - 1;
+
+    scoped_ptr<Expr> context_expr = generate_expr(input, pos);
+    if (input[pos] == ')') {
+        pos++;
+        return new WithItem{ context_expr };
+    }
+    
+    assume(sstrcmp(input, ", optional_vars=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", optional_vars=") - 1;
+
+    scoped_ptr<Expr> optional_vars = generate_expr(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    return new WithItem{ context_expr, optional_vars };
+}
+
+
+static
+array<scoped_ptr<WithItem>> generate_withitems(const std::string &input, size_t &pos) {
+    assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    if (input[pos] == ']') {
+        pos++;
+        return {};
+    }
+
+    std::vector<scoped_ptr<WithItem>> items;
+    while (true) {
+        scoped_ptr<WithItem> item = generate_withitem(input, pos);
+        items.emplace_back(std::move(item));
+        if (input[pos] == ',' && input[pos + 1] == ' ') {
+            pos += 2;
+            continue;
+        }
+        break;
+    }
+    array<scoped_ptr<WithItem>> result = std::move(items);
+    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return result;
+}
+
+
+static
+scoped_ptr<Stmt> generate_with(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "With(items=", pos));
+
+    pos += sizeof("With(items=") - 1;//TODO
+    array<scoped_ptr<WithItem>> items = generate_withitems(input, pos);
+
+    assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", body=") - 1;
+
+    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+
+    return new With{ items, body };
+}
+
+
+static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     scoped_ptr<Stmt> res;
 
@@ -283,6 +374,15 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     if (sstrcmp(input, "While(test=", pos)) {
         return generate_while(input, pos);
     }
+
+    if (sstrcmp(input, "For(target=", pos)) {
+        return generate_for(input, pos);
+    }
+
+    if (sstrcmp(input, "With(items=", pos)) {
+        return generate_with(input, pos);
+    }
+
     //TODO
     parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
@@ -316,10 +416,8 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
     }
     array<scoped_ptr<Stmt>> data = std::move(statements);
 
-    assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
-    pos++; 
-    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
-    pos++;
+    assume(sstrcmp(input, "], type_ignores=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof("], type_ignores=[])") - 1;
     return new Module{ data };
 }
 

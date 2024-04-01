@@ -58,6 +58,21 @@ class Or : public BoolOpKind {};
 
 class Expr : public Node {};
 
+
+class WithItem : public Node {
+    scoped_ptr<Expr> context_expr_;
+    scoped_ptr<Expr> optional_vars_;
+
+public:
+    WithItem(const scoped_ptr<Expr> &context_expr);
+    WithItem(const scoped_ptr<Expr> &context_expr, const scoped_ptr<Expr> &optional_vars);
+
+    const scoped_ptr<Expr> &context_expr() const;
+    const scoped_ptr<Expr> &optional_vars() const;
+    bool is_optional_var() const;
+};
+
+
 class BoolOp : public Expr {
     BoolOpKind op_;
     array<scoped_ptr<Expr>> values_;
@@ -266,6 +281,33 @@ public:
     const scoped_ptr<Expr> &test() const;
     const array<scoped_ptr<Stmt>> &body() const;
 };
+
+
+class For : public Stmt {
+    scoped_ptr<Expr> target_;
+    scoped_ptr<Expr> iter_;
+    array<scoped_ptr<Stmt>> body_;
+
+public:
+    For(const scoped_ptr<Expr> &target, const scoped_ptr<Expr> &iter, const array<scoped_ptr<Stmt>> &body);
+
+    const scoped_ptr<Expr> &target() const;
+    const scoped_ptr<Expr> &iter() const;
+    const array<scoped_ptr<Stmt>> &body() const;
+};
+
+
+class With : public Stmt {
+    array<scoped_ptr<WithItem>> items_;
+    array<scoped_ptr<Stmt>> body_;
+
+public:
+    With(const array<scoped_ptr<WithItem>> &items, const array<scoped_ptr<Stmt>> &body);
+
+    const array<scoped_ptr<WithItem>> &items() const;
+    const array<scoped_ptr<Stmt>> &body() const;
+};
+
 
 class If : public Stmt {
     scoped_ptr<Expr> test_;
