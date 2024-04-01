@@ -329,7 +329,7 @@ static
 scoped_ptr<Stmt> generate_with(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "With(items=", pos));
 
-    pos += sizeof("With(items=") - 1;//TODO
+    pos += sizeof("With(items=") - 1;
     array<scoped_ptr<WithItem>> items = generate_withitems(input, pos);
 
     assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
@@ -340,6 +340,42 @@ scoped_ptr<Stmt> generate_with(const std::string &input, size_t &pos) {
     pos++;
 
     return new With{ items, body };
+}
+
+
+static 
+scoped_ptr<Stmt> generate_if(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "If(test=", pos));
+
+    pos += sizeof("If(test=") - 1;
+    scoped_ptr<Expr> test = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", body=") - 1;
+
+    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+
+    assume(sstrcmp(input, ", orelse=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", orelse=") - 1;
+
+    array<scoped_ptr<Stmt>> orelse = generate_stmt_array(input, pos);
+    
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new If{ test, body, orelse };
+}
+
+
+static 
+scoped_ptr<Stmt>
+generate_expr_stmt(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "Expr(value=", pos));
+    
+    pos += sizeof("Expr(value=") - 1;
+    scoped_ptr<Expr> expr = generate_expr(input, pos);
+    assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos++;
+    return new ExprStmt{ expr };
 }
 
 
@@ -383,7 +419,29 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
         return generate_with(input, pos);
     }
 
-    //TODO
+    if (sstrcmp(input, "If(test=", pos)) {
+        return generate_if(input, pos);
+    }
+
+    if (sstrcmp(input, "Expr(value=", pos)) {
+        return generate_expr_stmt(input, pos);
+    }
+
+    if (sstrcmp(input, "Pass()", pos)) {
+        pos += sizeof("Pass()") - 1;
+        return new Pass{};
+    }
+
+    if (sstrcmp(input, "Break()", pos)) {
+        pos += sizeof("Break()") - 1;
+        return new Break{};
+    }
+
+    if (sstrcmp(input, "Continue()", pos)) {
+        pos += sizeof("Continue()") - 1;
+        return new Continue{};
+    }
+
     parse_error(pos, __FILE__, std::to_string(__LINE__));
 }
 
