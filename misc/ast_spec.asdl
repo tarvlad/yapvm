@@ -1,6 +1,5 @@
 module yapvm {
-    mod = Module(stmt *body)
-    # TODO For, With, 
+    mod = Module(stmt *body) 
     stmt = 
         Import(
             identifer name
@@ -31,6 +30,16 @@ module yapvm {
         | While(
             expr test,
             stmt *body
+        )
+        | For(
+            expr target, 
+            expr iter, 
+            stmt* body, 
+            stmt* orelse
+        )
+        | With(
+            withitem* items, 
+            stmt* body
         )
         | If(
             expr test,
@@ -96,4 +105,6 @@ module yapvm {
 
     cmpop = 
         Eq | NotEq | Lt | LtE | Gt | GtE 
+
+    withitem = (expr context_expr, expr? optional_vars)
 }

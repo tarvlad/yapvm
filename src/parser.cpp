@@ -233,6 +233,25 @@ generate_aug_assign(const std::string &input, size_t &pos) {
 }
 
 
+static 
+scoped_ptr<Stmt> generate_while(const std::string &input, size_t &pos) {
+    assert(sstrcmp(input, "While(test=", pos));
+
+    pos += sizeof("While(test=") - 1;
+    scoped_ptr<Expr> test = generate_expr(input, pos);
+
+    assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", body=") - 1;
+
+    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+
+    assume(sstrcmp(input, ", orelse=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
+    pos += sizeof(", orelse=[])") - 1;
+
+    return new While{ test, body };
+}
+
+
 static
 scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     scoped_ptr<Stmt> res;
@@ -259,6 +278,10 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
 
     if (sstrcmp(input, "AugAssign(target=", pos)) {
         return generate_aug_assign(input, pos);
+    }
+
+    if (sstrcmp(input, "While(test=", pos)) {
+        return generate_while(input, pos);
     }
     //TODO
     parse_error(pos, __FILE__, std::to_string(__LINE__));
@@ -311,7 +334,6 @@ static
 scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
     throw std::runtime_error("Not implemented currently"); //TODO
 }
-
 
 
 scoped_ptr<Module> yapvm::parser::generate_ast(const std::string &input) {
