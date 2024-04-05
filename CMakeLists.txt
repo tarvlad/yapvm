@@ -22,6 +22,9 @@ set(SOURCE_ALL
 
     include/gc.h
     src/gc.cpp
+
+    include/interpreter.h
+    src/interpreter.cpp
 )
 
 
