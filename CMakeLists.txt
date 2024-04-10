@@ -25,6 +25,9 @@ set(SOURCE_ALL
 
     include/interpreter.h
     src/interpreter.cpp
+    
+    include/y_iterator.h
+    src/y_iterator.cpp
 )
 
 

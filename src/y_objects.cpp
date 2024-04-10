@@ -2,10 +2,11 @@
 #include <stdexcept>
 #include <vector>
 
+
 using namespace yapvm::yobjects;
 
 
-YBoolObject::YBoolObject(bool value) : value_{ value } {}
+YBoolObject::YBoolObject(bool value) : YPrimitiveObject { }, value_ { value } {}
 
 
 bool YBoolObject::value() const {
@@ -36,13 +37,11 @@ ssize_t YIntObject::value() const {
     return value_;
 }
 
-YListObject::YListObject(const std::deque<YObject> &value) : list_{ value } {}
+YListObject::YListObject(const std::deque<YObject> &value) : YObject{ true, false },  list_ { value } {}
 
 
-YListObject::YListObject(const std::vector<YObject> &value) {
-    for (YObject element : value) {
-        list_.push_back(element);
-    }
+YListObject::YListObject(const std::vector<YObject> &value) : YObject{ true, false } {
+    // TODO
 };
 
 
@@ -58,8 +57,12 @@ YListObject &YListObject::operator=(const YListObject &other) {
 }
 
 
-const std::deque<YObject> &YListObject::value() const {
+std::deque<YObject> &YListObject::value() {
     return list_;
+}
+
+YIterator *YListObject::iter() {
+    return new YIteratorList{ value() };
 }
 
 
@@ -73,6 +76,7 @@ const YObject &YListObject::operator[](size_t index) const {
 
 YListObject YListObject::operator+(const YListObject &other) {
     YListObject tmp{ list_ };
+    // TODO
     for (YObject element : other.list_) {
         tmp.list_.push_back(element);
     }
@@ -123,3 +127,22 @@ const YObject &YTupleObject::operator[](size_t index) const {
 size_t YTupleObject::size() const {
     return tuple_.size();
 }
+
+
+YObject::YObject(bool is_mutable, bool is_iterable) : is_mutable_{ is_mutable }, is_iterable_{ is_terable } {}
+
+bool YObject::is_mutable() const {
+    return is_mutable_;
+}
+
+
+bool &YObject::is_marked() {
+    return is_marked_;
+}
+
+YCustomClasses::YCustomClasses(const std::map<std::string, YObject>& dict) : dict_{ dict } {}
+
+YIterator *YCustomClasses::iter() {
+    // TODO
+}
+

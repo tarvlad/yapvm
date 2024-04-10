@@ -2,8 +2,10 @@
 
 #include <cstddef>
 #include <cstddef>
+#include <map>
 #include <deque>
 #include "utils.h"
+#include "y_iterator.h"
 
 
 #if _MSC_VER
@@ -16,14 +18,34 @@ namespace yobjects {
 
 
 class YObject {
+protected:
+    bool is_mutable_;
+    bool is_iterable_;
+    bool is_marked_ = false;
 
 public:
-
+    YObject(bool is_mutable, bool is_iterable);
+    bool is_mutable() const;
+    bool &is_marked();
+    virtual YIterator *iter() = 0; 
+    // virtual ssize_t hash() const = 0;
     virtual ~YObject() = default;
 };
 
 
-class YPrimitiveObject : public YObject {};
+class YCustomClasses : public YObject {
+    std::map<std::string, YObject> dict_;
+
+public:
+    YCustomClasses(const std::map<std::string, YObject> &dict);
+    YIterator *iter();
+    ssize_t hash() const;
+};
+
+
+class YPrimitiveObject : public YObject {
+    YPrimitiveObject() : YObject(false, false) { };
+};
 
 class YNoneObject : public YPrimitiveObject {};
 
@@ -75,7 +97,9 @@ public:
 
     YListObject &operator=(const YListObject &other);
 
-    const std::deque<YObject> &value() const;
+    std::deque<YObject> &value();
+
+    YIterator *iter();
 
     const YObject &operator[](size_t index) const;
 
@@ -87,6 +111,7 @@ public:
 };
 
 class YTupleObject : public YObject {
+    // TODO  const std::vector<YObject>
     array<YObject> tuple_;
 
 public:
