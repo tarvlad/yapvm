@@ -1,5 +1,5 @@
-#include <iterator>
 #include "y_objects.h"
+#include <iterator>
 
 namespace yapvm {
 namespace yobjects {
@@ -15,10 +15,12 @@ public:
 
 class YIteratorList : public YIterator {
 	std::deque<YObject>::iterator iterator_;
-	std::deque<YObject>::iterator end_;
 
 public: 
-	YIteratorList(std::deque<YObject, std::allocator<YObject>> &value);
+	YIteratorList(std::deque<YObject>::iterator &value);
+	std::deque<YObject>::iterator& iter();
+	YIterator *start();
+	YIterator *end();
 	YIterator *next();
 	YObject &operator*();
 	YIterator &operator++();

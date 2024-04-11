@@ -5,7 +5,7 @@
 #include <map>
 #include <deque>
 #include "utils.h"
-#include "y_iterator.h"
+// #include "y_iterator.h"
 
 
 #if _MSC_VER
@@ -16,35 +16,60 @@ using ssize_t = long long;
 namespace yapvm {
 namespace yobjects {
 
+class YIterator;
 
 class YObject {
 protected:
-    bool is_mutable_;
+    bool is_hashable_;
     bool is_iterable_;
     bool is_marked_ = false;
 
 public:
-    YObject(bool is_mutable, bool is_iterable);
-    bool is_mutable() const;
+    YObject(bool is_hashable, bool is_iterable);
+    bool is_hashable() const;
     bool &is_marked();
-    virtual YIterator *iter() = 0; 
+    virtual YIterator* begin(){return nullptr;};
+    virtual YIterator* end(){return nullptr;};
     // virtual ssize_t hash() const = 0;
     virtual ~YObject() = default;
 };
 
+class YIterator {
+public:
+	virtual YIterator* next() = 0;
+	virtual YObject &operator*() = 0;
+	virtual YIterator &operator++() = 0;
+	virtual ~YIterator() = default;
+};
+
+class YIteratorList : public YIterator {
+	std::deque<YObject>::iterator iterator_;
+public: 
+	YIteratorList(const std::deque<YObject>::iterator &value);
+	std::deque<YObject>::iterator& iter();
+	YIterator *start();
+	YIterator *end();
+	YIterator *next();
+	YObject &operator*();
+	YIterator &operator++();
+	~YIteratorList() = default;
+};
 
 class YCustomClasses : public YObject {
     std::map<std::string, YObject> dict_;
 
 public:
     YCustomClasses(const std::map<std::string, YObject> &dict);
-    YIterator *iter();
+    // YIterator* begin();
+    // YIterator* end();
+    // YIterator *iter();
     ssize_t hash() const;
 };
 
 
 class YPrimitiveObject : public YObject {
-    YPrimitiveObject() : YObject(false, false) { };
+public:
+    YPrimitiveObject(bool is_hashable, bool is_iterable) : YObject(is_hashable, is_iterable) {};
 };
 
 class YNoneObject : public YPrimitiveObject {};
@@ -54,6 +79,8 @@ class YBoolObject : public YPrimitiveObject {
 
 public:
     YBoolObject(bool value);
+    YIterator* begin();
+    YIterator* end();
     bool value() const;
 };
 
@@ -62,6 +89,8 @@ class YStringObject : public YPrimitiveObject {
 
 public:
     YStringObject(const std::string &value);
+    YIterator* begin();
+    YIterator* end();
     const std::string &value() const;
 };
 
@@ -70,6 +99,8 @@ class YFloatObject : public YPrimitiveObject {
 
 public:
     YFloatObject(double value);
+    YIterator* begin();
+    YIterator* end();
     double value() const;
 };
 
@@ -78,6 +109,8 @@ class YIntObject : public YPrimitiveObject {
 
 public:
     YIntObject(ssize_t value);
+    YIterator* begin();
+    YIterator* end();
     ssize_t value() const;
 };
 
@@ -86,7 +119,7 @@ class YListObject : public YObject {
     std::deque<YObject> list_;
 
 public:
-    YListObject() = default;
+    YListObject() : YObject{true, true}, list_(std::deque<YObject> {}) {};
 
     YListObject(const std::deque<YObject> &value);
     YListObject(const std::vector<YObject> &value);
@@ -97,9 +130,12 @@ public:
 
     YListObject &operator=(const YListObject &other);
 
+    YIterator* begin();
+    YIterator* end();
+
     std::deque<YObject> &value();
 
-    YIterator *iter();
+    // YIterator *iter();
 
     const YObject &operator[](size_t index) const;
 
@@ -110,25 +146,25 @@ public:
     size_t size() const;
 };
 
-class YTupleObject : public YObject {
-    // TODO  const std::vector<YObject>
-    array<YObject> tuple_;
+// class YTupleObject : public YObject {
+//     // TODO  const std::vector<YObject>
+//     array<YObject> tuple_;
 
-public:
-    YTupleObject(size_t size);
+// public:
+//     YTupleObject(size_t size);
 
-    YTupleObject(const std::vector<YObject> &value);
+//     YTupleObject(const std::vector<YObject> &value);
 
-    YTupleObject(const YTupleObject &value);
+//     YTupleObject(const YTupleObject &value);
 
-    YTupleObject &operator=(const YTupleObject &other);
+//     YTupleObject &operator=(const YTupleObject &other);
 
-    ~YTupleObject() = default;
+//     ~YTupleObject() = default;
 
-    const YObject &operator[](size_t index) const;
+//     const YObject &operator[](size_t index) const;
 
-    size_t size() const;
-};
+//     size_t size() const;
+// };
 
 }
 }
