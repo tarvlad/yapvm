@@ -79,8 +79,6 @@ class YBoolObject : public YPrimitiveObject {
 
 public:
     YBoolObject(bool value);
-    YIterator* begin();
-    YIterator* end();
     bool value() const;
 };
 
@@ -89,8 +87,6 @@ class YStringObject : public YPrimitiveObject {
 
 public:
     YStringObject(const std::string &value);
-    YIterator* begin();
-    YIterator* end();
     const std::string &value() const;
 };
 
@@ -99,8 +95,6 @@ class YFloatObject : public YPrimitiveObject {
 
 public:
     YFloatObject(double value);
-    YIterator* begin();
-    YIterator* end();
     double value() const;
 };
 
@@ -109,8 +103,6 @@ class YIntObject : public YPrimitiveObject {
 
 public:
     YIntObject(ssize_t value);
-    YIterator* begin();
-    YIterator* end();
     ssize_t value() const;
 };
 

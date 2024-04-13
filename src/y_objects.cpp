@@ -40,13 +40,6 @@ YIterator* YIteratorList::next() {
 
 YBoolObject::YBoolObject(bool value) : YPrimitiveObject{true, false}, value_ { value } {}
 
-YIterator* YBoolObject::begin() {
-    return nullptr;
-}
-
-YIterator* YBoolObject::end() {
-    return nullptr;
-}
 
 bool YBoolObject::value() const {
     return value_;
@@ -55,13 +48,6 @@ bool YBoolObject::value() const {
 
 YStringObject::YStringObject(const std::string &value) : YPrimitiveObject{true, false}, value_{ value } {}
 
-YIterator* YStringObject::begin() {
-    return nullptr;
-}
-
-YIterator* YStringObject::end() {
-    return nullptr;
-}
 
 const std::string &YStringObject::value() const {
     return value_;
@@ -70,13 +56,6 @@ const std::string &YStringObject::value() const {
 
 YFloatObject::YFloatObject(double value) : YPrimitiveObject{true, false}, value_{ value } {}
 
-YIterator* YFloatObject::begin() {
-    return nullptr;
-}
-
-YIterator* YFloatObject::end() {
-    return nullptr;
-}
 
 double YFloatObject::value() const {
     return value_;
@@ -85,13 +64,6 @@ double YFloatObject::value() const {
 
 YIntObject::YIntObject(ssize_t value) : YPrimitiveObject{true, false}, value_{ value } {}
 
-YIterator* YIntObject::begin() {
-    return nullptr;
-}
-
-YIterator* YIntObject::end() {
-    return nullptr;
-}
 
 ssize_t YIntObject::value() const {
     return value_;
