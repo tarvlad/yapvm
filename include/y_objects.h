@@ -4,8 +4,9 @@
 #include <cstddef>
 #include <map>
 #include <deque>
+#include <functional>
+#include <sys/types.h>
 #include "utils.h"
-// #include "y_iterator.h"
 
 
 #if _MSC_VER
@@ -30,7 +31,7 @@ public:
     bool &is_marked();
     virtual YIterator* begin() { return nullptr; };
     virtual YIterator* end() { return nullptr; };
-    // virtual ssize_t hash() const = 0;
+    virtual size_t hash() const {return 0;};
     virtual ~YObject() = default;
 };
 
@@ -63,7 +64,7 @@ public:
     // YIterator* begin();
     // YIterator* end();
     // YIterator *iter();
-    ssize_t hash() const;
+    // size_t hash() const;
 };
 
 
@@ -80,6 +81,7 @@ class YBoolObject : public YPrimitiveObject {
 public:
     YBoolObject(bool value);
     bool value() const;
+    size_t hash() { return (value_) ? 1 : 0;}
 };
 
 class YStringObject : public YPrimitiveObject {
@@ -88,6 +90,7 @@ class YStringObject : public YPrimitiveObject {
 public:
     YStringObject(const std::string &value);
     const std::string &value() const;
+    size_t hash() { return std::hash<std::string>{}(value_); }
 };
 
 class YFloatObject : public YPrimitiveObject {
@@ -96,6 +99,7 @@ class YFloatObject : public YPrimitiveObject {
 public:
     YFloatObject(double value);
     double value() const;
+    size_t hash() { return std::hash<double>{}(value_); }
 };
 
 class YIntObject : public YPrimitiveObject {
@@ -104,6 +108,7 @@ class YIntObject : public YPrimitiveObject {
 public:
     YIntObject(ssize_t value);
     ssize_t value() const;
+    size_t hash() { return std::hash<ssize_t>{}(value_); }
 };
 
 
@@ -118,15 +123,12 @@ public:
 
     YListObject(const YListObject &value);
 
-
     YListObject &operator=(const YListObject &other);
 
     YIterator* begin();
     YIterator* end();
 
     std::deque<YObject> &value();
-
-    // YIterator *iter();
 
     const YObject &operator[](size_t index) const;
 
@@ -152,6 +154,7 @@ public:
     YIterator *end();
 
     size_t size() const;
+    size_t hash();
 };
 
 }

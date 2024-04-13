@@ -107,3 +107,7 @@ std::string yapvm::extract_delimited_substring(const std::string &str, size_t po
     std::string result = str.substr(pos + 1, end_pos - pos + 1 - 1);
     return result;
 }
+
+size_t yapvm::combine_hashes(size_t h1, size_t h2) {
+    return h1 ^ (h2 << 1);         
+}

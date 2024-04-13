@@ -1,6 +1,7 @@
 #include "y_objects.h"
 #include "utils.h"
 #include <stdexcept>
+#include <sys/types.h>
 #include <vector>
 
 
@@ -73,7 +74,9 @@ YListObject::YListObject(const std::deque<YObject> &value) : YObject{ false, tru
 
 
 YListObject::YListObject(const std::vector<YObject> &value) : YObject{ false, true } {
-    // TODO
+    for (YObject elem : value) {
+        list_.push_back(elem);        
+    }
 };
 
 
@@ -174,6 +177,14 @@ YIterator *YTupleObject::begin() {
 YIterator *YTupleObject::end() {
     // TODO
     return nullptr;        
+}
+
+size_t YTupleObject::hash() {
+    size_t h = tuple_[0].hash();
+    for (size_t i = 1; i < tuple_.size(); i++) {
+        h = combine_hashes(h, tuple_[i].hash());        
+    }
+    return h;        
 }
 
 
