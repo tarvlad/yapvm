@@ -28,8 +28,8 @@ public:
     YObject(bool is_hashable, bool is_iterable);
     bool is_hashable() const;
     bool &is_marked();
-    virtual YIterator* begin(){return nullptr;};
-    virtual YIterator* end(){return nullptr;};
+    virtual YIterator* begin() { return nullptr; };
+    virtual YIterator* end() { return nullptr; };
     // virtual ssize_t hash() const = 0;
     virtual ~YObject() = default;
 };
@@ -126,7 +126,6 @@ public:
 
     YListObject(const YListObject &value);
 
-    ~YListObject() = default;
 
     YListObject &operator=(const YListObject &other);
 
@@ -146,25 +145,22 @@ public:
     size_t size() const;
 };
 
-// class YTupleObject : public YObject {
-//     // TODO  const std::vector<YObject>
-//     array<YObject> tuple_;
+class YTupleObject : public YObject {
+    std::vector<YObject> tuple_;
 
-// public:
-//     YTupleObject(size_t size);
+public:
+    YTupleObject(const std::vector<YObject> &value);
 
-//     YTupleObject(const std::vector<YObject> &value);
+    YTupleObject(const YTupleObject &other);
+    YTupleObject &operator=(const YTupleObject &other);
 
-//     YTupleObject(const YTupleObject &value);
+    const YObject &operator[](size_t index) const;
 
-//     YTupleObject &operator=(const YTupleObject &other);
+    YIterator *begin();
+    YIterator *end();
 
-//     ~YTupleObject() = default;
-
-//     const YObject &operator[](size_t index) const;
-
-//     size_t size() const;
-// };
+    size_t size() const;
+};
 
 }
 }

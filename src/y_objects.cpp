@@ -121,10 +121,6 @@ std::deque<YObject> &YListObject::value() {
     return list_;
 }
 
-// YIterator *YListObject::iter() {
-//     return new YIteratorList{ value() };
-// }
-
 
 const YObject &YListObject::operator[](size_t index) const {
     if (index >= list_.size()) {
@@ -136,7 +132,7 @@ const YObject &YListObject::operator[](size_t index) const {
 
 YListObject YListObject::operator+(const YListObject &other) {
     YListObject tmp{ list_ };
-    // TODO
+   
     for (YObject element : other.list_) {
         tmp.list_.push_back(element);
     }
@@ -170,39 +166,43 @@ size_t YListObject::size() const {
     return list_.size();
 }
 
-// TUPLE
-// YTupleObject::YTupleObject(size_t size) : YObject{true, true}, tuple_{ size } {}
+
+YTupleObject::YTupleObject(const std::vector<YObject> &value) : YObject { true, true }, tuple_ { value } {}
 
 
-// YTupleObject::YTupleObject(const std::vector<YObject> &value) : YTupleObject(value.size()) {
-//     for (size_t i = 0; i < value.size(); i++) {
-//         tuple_[i] = value[i];
-//     }
-// }
+YTupleObject::YTupleObject(const YTupleObject &other) : YObject{ true, true }, tuple_{ other.tuple_ } {}
 
 
-// YTupleObject::YTupleObject(const YTupleObject &other) : YObject{true, true}, tuple_{ other.tuple_ } {}
+YTupleObject &YTupleObject::operator=(const YTupleObject &other) {
+    if (&other == this) {
+        return *this;
+    }
+    tuple_ = other.tuple_;
+    return *this;
+}
 
 
-// YTupleObject &YTupleObject::operator=(const YTupleObject &other) {
-//     if (&other == this) {
-//         return *this;
-//     }
-//     tuple_ = other.tuple_;
-//     return *this;
-// }
+const YObject &YTupleObject::operator[](size_t index) const {
+    if (index >= tuple_.size()) {
+        throw std::range_error("IndexError: list index out of range");
+    }
+    return tuple_[index];
+}
 
 
-// const YObject &YTupleObject::operator[](size_t index) const {
-//     if (index >= tuple_.size()) {
-//         throw std::range_error("IndexError: list index out of range");
-//     }
-//     return tuple_[index];
-// }
+size_t YTupleObject::size() const {
+    return tuple_.size();
+}
+
+YIterator *YTupleObject::begin() {
+    // TODO
+    return nullptr;        
+}
+
+YIterator *YTupleObject::end() {
+    // TODO
+    return nullptr;        
+}
 
 
-// size_t YTupleObject::size() const {
-//     return tuple_.size();
-// }
-// TUPLE
 }
