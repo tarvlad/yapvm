@@ -64,10 +64,22 @@ add_executable(YObjectTest
   test/YObjectTest.cpp
   ${SOURCE_ALL}
 )
+
+add_executable(ygc_test
+  test/ygc_test.cpp
+  ${SOURCE_ALL}
+)
+
 target_link_libraries(
   YObjectTest
   GTest::gtest_main
 )
 
+target_link_libraries(
+  ygc_test
+  GTest::gtest_main
+)
+
 include(GoogleTest)
 gtest_discover_tests(YObjectTest)
+gtest_discover_tests(ygc_test)

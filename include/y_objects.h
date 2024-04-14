@@ -28,8 +28,8 @@ protected:
 public:
     YObject(bool is_hashable, bool is_iterable);
     bool is_hashable() const;
-    bool is_marked();
-    void mark();
+    bool &is_marked();
+    // void mark();
     virtual YIterator *iter() { return nullptr; };
     virtual size_t hash() const {return 0;};
     virtual bool operator==(const YObject &other) const {return 0;};
@@ -86,7 +86,7 @@ public:
     YIterator &operator++();
     void next();
 };
-// TODO change name
+
 class YCustomClass : public YObject {
     std::unordered_map<std::string, YObject*> dict_;
 

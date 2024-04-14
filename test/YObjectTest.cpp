@@ -25,8 +25,7 @@ TEST(YListTest, Iter) {
     int cnt = 0;
     while (it->has_next()) {
         cnt++;
-        // TODO set_mark(true)
-        (**it).mark();
+        (**it).is_marked() = true;
         it->next();
     }
     delete it;
@@ -51,7 +50,7 @@ TEST(YTupleTest, Iter) {
     int cnt = 0;
     while (it->has_next()) {
         cnt++;
-        (**it).mark();
+        (**it).is_marked() = true;
         it->next();
     }
     delete it;
@@ -75,7 +74,7 @@ TEST(YCustomClassTest, Iter) {
     user_class.add("list", &list);
     YIterator* it = user_class.iter();
     while (it->has_next()) {
-        (**it).mark();
+        (**it).is_marked() = true;
         it->next();
     }
     delete it;

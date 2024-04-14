@@ -14,13 +14,13 @@ bool YObject::is_hashable() const {
     return is_hashable_;
 }
 
-bool YObject::is_marked() {
+bool &YObject::is_marked() {
     return is_marked_;
 }
 
-void YObject::mark() {
-    is_marked_ = true;
-}
+// void YObject::mark() {
+//     is_marked_ = true;
+// }
 
 YCustomClass::YCustomClass(const std::unordered_map<std::string, YObject*> &dict) : YObject{false, true}, dict_{ dict } {}
 
