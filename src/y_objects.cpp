@@ -39,6 +39,12 @@ YIterator* YIteratorList::next() {
 	return this;
 }
 
+
+size_t YHash::operator()(const YObject &val) {
+    return val.hash();
+}
+
+
 YBoolObject::YBoolObject(bool value) : YPrimitiveObject{true, false}, value_ { value } {}
 
 
@@ -189,3 +195,12 @@ size_t YTupleObject::hash() {
 
 
 }
+/*
+void YDictObject::add(const YObject &key, YObject &value) {
+    dict_[key] = value;
+}
+
+YObject &YDictObject::get(const YObject &key) {
+    return dict_[key];
+}
+*/

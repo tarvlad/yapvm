@@ -35,6 +35,11 @@ public:
     virtual ~YObject() = default;
 };
 
+class YHash {
+public:
+    size_t operator()(const YObject &value);
+};
+
 class YIterator {
 public:
 	virtual YIterator* next() = 0;
@@ -116,7 +121,7 @@ class YListObject : public YObject {
     std::deque<YObject> list_;
 
 public:
-    YListObject() : YObject{true, true}, list_(std::deque<YObject> {}) {};
+    YListObject() : YObject{ false, true }, list_(std::deque<YObject> {}) {};
 
     YListObject(const std::deque<YObject> &value);
     YListObject(const std::vector<YObject> &value);
@@ -156,6 +161,25 @@ public:
     size_t size() const;
     size_t hash();
 };
+/*
+class YDictObject : public YObject {
+    std::unordered_map<YObject, YObject, YHash> dict_;
+
+public:
+    YDictObject() : YObject { false, true } {};
+    void add(const YObject &key, YObject &value);
+    YObject &get(const YObject &key);
+    YDictObject(const YTupleObject &other);
+    YDictObject &operator=(const YTupleObject &other);
+
+    const YObject &operator[](size_t index) const;
+
+    YIterator *begin();
+    YIterator *end();
+
+    size_t size() const;
+};
+*/
 
 }
 }
