@@ -28,10 +28,11 @@ protected:
 public:
     YObject(bool is_hashable, bool is_iterable);
     bool is_hashable() const;
-    bool &is_marked();
-    virtual YIterator* begin() { return nullptr; };
-    virtual YIterator* end() { return nullptr; };
+    bool is_marked();
+    void mark();
+    virtual YIterator *iter() { return nullptr; };
     virtual size_t hash() const {return 0;};
+    virtual bool operator==(const YObject &other) const {return 0;};
     virtual ~YObject() = default;
 };
 
@@ -42,23 +43,35 @@ public:
 
 class YIterator {
 public:
-	virtual YIterator* next() = 0;
-	virtual YObject &operator*() = 0;
-	virtual YIterator &operator++() = 0;
-	virtual ~YIterator() = default;
+    virtual YObject &operator*() = 0;
+    virtual YIterator &operator++() = 0;
+    virtual void next() = 0;
+    virtual bool has_next() = 0;
+    virtual ~YIterator() = default;
 };
 
 class YIteratorList : public YIterator {
-	std::deque<YObject>::iterator iterator_;
+    std::deque<YObject>::iterator begin_;
+    std::deque<YObject>::iterator end_;
+
 public: 
-	YIteratorList(const std::deque<YObject>::iterator &value);
-	std::deque<YObject>::iterator& iter();
-	YIterator *start();
-	YIterator *end();
-	YIterator *next();
-	YObject &operator*();
-	YIterator &operator++();
-	~YIteratorList() = default;
+    YIteratorList(const std::deque<YObject>::iterator &begin, const std::deque<YObject>::iterator &end);
+    bool has_next();
+    YObject &operator*();
+    YIterator &operator++();
+    void next();
+};
+
+class YIteratorTuple : public YIterator {
+    std::vector<YObject>::iterator begin_;
+    std::vector<YObject>::iterator end_;
+
+public: 
+    YIteratorTuple(const std::vector<YObject>::iterator &begin, const std::vector<YObject>::iterator &end);
+    bool has_next();
+    YObject &operator*();
+    YIterator &operator++();
+    void next();
 };
 
 class YCustomClasses : public YObject {
@@ -130,12 +143,11 @@ public:
 
     YListObject &operator=(const YListObject &other);
 
-    YIterator* begin();
-    YIterator* end();
+    YIterator *iter();
 
     std::deque<YObject> &value();
 
-    const YObject &operator[](size_t index) const;
+    YObject &operator[](size_t index);
 
     YListObject operator+(const YListObject &other);
 
@@ -153,21 +165,21 @@ public:
     YTupleObject(const YTupleObject &other);
     YTupleObject &operator=(const YTupleObject &other);
 
-    const YObject &operator[](size_t index) const;
+    YObject &operator[](size_t index);
 
-    YIterator *begin();
-    YIterator *end();
+    YIterator *iter();
 
     size_t size() const;
     size_t hash();
 };
-/*
+
 class YDictObject : public YObject {
     std::unordered_map<YObject, YObject, YHash> dict_;
 
 public:
     YDictObject() : YObject { false, true } {};
-    void add(const YObject &key, YObject &value);
+    void add(const YObject &key, const YObject &value);
+    /*
     YObject &get(const YObject &key);
     YDictObject(const YTupleObject &other);
     YDictObject &operator=(const YTupleObject &other);
@@ -178,8 +190,8 @@ public:
     YIterator *end();
 
     size_t size() const;
+    */
 };
-*/
 
 }
 }

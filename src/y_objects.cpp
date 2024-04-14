@@ -14,8 +14,12 @@ bool YObject::is_hashable() const {
     return is_hashable_;
 }
 
-bool &YObject::is_marked() {
+bool YObject::is_marked() {
     return is_marked_;
+}
+
+void YObject::mark() {
+    is_marked_ = true;
 }
 
 YCustomClasses::YCustomClasses(const std::map<std::string, YObject>& dict) : YObject{false, true}, dict_{ dict } {}
@@ -30,14 +34,6 @@ YCustomClasses::YCustomClasses(const std::map<std::string, YObject>& dict) : YOb
 // YIterator *YCustomClasses::iter() {
 //     // TODO
 // }
-
-
-YIteratorList::YIteratorList(const std::deque<YObject>::iterator &value) : iterator_{value} {}
-
-YIterator* YIteratorList::next() {
-	iterator_++;
-	return this;
-}
 
 
 size_t YHash::operator()(const YObject &val) {
@@ -97,13 +93,16 @@ YListObject &YListObject::operator=(const YListObject &other) {
     return *this;
 }
 
+YIterator *YListObject::iter() {
+    return new YIteratorList { list_.begin(), list_.end() };
+}
 
 std::deque<YObject> &YListObject::value() {
     return list_;
 }
 
 
-const YObject &YListObject::operator[](size_t index) const {
+YObject &YListObject::operator[](size_t index) {
     if (index >= list_.size()) {
         throw std::range_error("IndexError: list index out of range");
     }
@@ -120,23 +119,24 @@ YListObject YListObject::operator+(const YListObject &other) {
     return tmp;
 }
 
+YIteratorList::YIteratorList(const std::deque<YObject>::iterator &begin, const std::deque<YObject>::iterator &end) : begin_{begin}, end_{end} {}
+
+bool YIteratorList::has_next() {
+    return begin_ < end_;
+}
+
 YObject &YIteratorList::operator*() {
-	return *(iterator_);
+    return *(begin_);
 }
 
 YIterator &YIteratorList::operator++() {
-	iterator_++;
+	++begin_;
 	return *this;
 }
 
-YIterator* YListObject::begin() {
-    return new YIteratorList(list_.begin());
+void YIteratorList::next() {
+    ++begin_;
 }
-
-YIterator* YListObject::end() {
-    return new YIteratorList(list_.end());
-}
-
 
 void YListObject::append(const YObject &val) {
     list_.push_front(val);
@@ -163,27 +163,21 @@ YTupleObject &YTupleObject::operator=(const YTupleObject &other) {
 }
 
 
-const YObject &YTupleObject::operator[](size_t index) const {
+YObject &YTupleObject::operator[](size_t index) {
     if (index >= tuple_.size()) {
         throw std::range_error("IndexError: list index out of range");
     }
     return tuple_[index];
 }
 
+YIterator *YTupleObject::iter() {
+    return new YIteratorTuple { tuple_.begin(), tuple_.end() };
+}
 
 size_t YTupleObject::size() const {
     return tuple_.size();
 }
 
-YIterator *YTupleObject::begin() {
-    // TODO
-    return nullptr;        
-}
-
-YIterator *YTupleObject::end() {
-    // TODO
-    return nullptr;        
-}
 
 size_t YTupleObject::hash() {
     size_t h = tuple_[0].hash();
@@ -195,12 +189,34 @@ size_t YTupleObject::hash() {
 
 
 }
-/*
-void YDictObject::add(const YObject &key, YObject &value) {
-    dict_[key] = value;
-}
 
+/*
+void YDictObject::add(const YObject &key, const YObject &value) {
+    dict_.insert(key, value);
+}
+*/
+
+/*
 YObject &YDictObject::get(const YObject &key) {
     return dict_[key];
 }
 */
+
+YIteratorTuple::YIteratorTuple(const std::vector<YObject>::iterator &begin, const std::vector<YObject>::iterator &end) : begin_ {begin}, end_ {end}  {}
+
+bool YIteratorTuple::has_next() {
+    return begin_ < end_;
+}
+
+YObject &YIteratorTuple::operator*() {
+    return *(begin_);
+}
+
+YIterator &YIteratorTuple::operator++() {
+    ++begin_;
+    return *this;
+}
+
+void YIteratorTuple::next() {
+    ++begin_;
+}
