@@ -36,6 +36,7 @@ public:
     virtual ~YObject() = default;
 };
 
+
 class YHash {
 public:
     size_t operator()(const YObject &value);
@@ -48,6 +49,18 @@ public:
     virtual void next() = 0;
     virtual bool has_next() = 0;
     virtual ~YIterator() = default;
+};
+
+class YIteratorCustomClass : public YIterator {
+    std::unordered_map<std::string, YObject*>::iterator begin_;
+    std::unordered_map<std::string, YObject*>::iterator end_;
+
+public: 
+    YIteratorCustomClass(const std::unordered_map<std::string, YObject*>::iterator &begin, const std::unordered_map<std::string, YObject*>::iterator &end);
+    bool has_next();
+    YObject &operator*();
+    YIterator &operator++();
+    void next();
 };
 
 class YIteratorList : public YIterator {
@@ -73,16 +86,15 @@ public:
     YIterator &operator++();
     void next();
 };
-
-class YCustomClasses : public YObject {
-    std::map<std::string, YObject> dict_;
+// TODO change name
+class YCustomClass : public YObject {
+    std::unordered_map<std::string, YObject*> dict_;
 
 public:
-    YCustomClasses(const std::map<std::string, YObject> &dict);
-    // YIterator* begin();
-    // YIterator* end();
-    // YIterator *iter();
-    // size_t hash() const;
+    YCustomClass() : YObject { false, true } {};
+    YCustomClass(const std::unordered_map<std::string, YObject*> &dict);
+    void add(const std::string &key, YObject *val);
+    YIterator *iter();
 };
 
 
@@ -174,12 +186,13 @@ public:
 };
 
 class YDictObject : public YObject {
-    std::unordered_map<YObject, YObject, YHash> dict_;
+    std::map<YObject*, int> dict_;
 
 public:
     YDictObject() : YObject { false, true } {};
-    void add(const YObject &key, const YObject &value);
     /*
+    void add(const YObject &key, int value);
+    
     YObject &get(const YObject &key);
     YDictObject(const YTupleObject &other);
     YDictObject &operator=(const YTupleObject &other);

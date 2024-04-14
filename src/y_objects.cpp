@@ -22,8 +22,14 @@ void YObject::mark() {
     is_marked_ = true;
 }
 
-YCustomClasses::YCustomClasses(const std::map<std::string, YObject>& dict) : YObject{false, true}, dict_{ dict } {}
+YCustomClass::YCustomClass(const std::unordered_map<std::string, YObject*> &dict) : YObject{false, true}, dict_{ dict } {}
 
+void YCustomClass::add(const std::string &key, YObject *val) {
+    dict_[key] = val;
+}
+YIterator *YCustomClass::iter() {
+    return new YIteratorCustomClass {dict_.begin(), dict_.end()};
+}
 // YIterator* YCustomClasses::begin() {
 //     return new YIteratorList(dict_.begin());
 // }
@@ -191,10 +197,10 @@ size_t YTupleObject::hash() {
 }
 
 /*
-void YDictObject::add(const YObject &key, const YObject &value) {
+void YDictObject::add(const YObject &key, int value) {
     dict_.insert(key, value);
 }
-*/
+*/ 
 
 /*
 YObject &YDictObject::get(const YObject &key) {
@@ -218,5 +224,24 @@ YIterator &YIteratorTuple::operator++() {
 }
 
 void YIteratorTuple::next() {
+    ++begin_;
+}
+
+YIteratorCustomClass::YIteratorCustomClass(const std::unordered_map<std::string, YObject*>::iterator &begin, const std::unordered_map<std::string, YObject*>::iterator &end) : begin_ {begin}, end_ {end} {}
+
+bool YIteratorCustomClass::has_next() {
+    return begin_ != end_;
+}
+
+YObject &yapvm::yobjects::YIteratorCustomClass::operator*() {
+    return *(*begin_).second;
+}
+
+YIterator &YIteratorCustomClass::operator++() {
+    ++begin_;
+    return *this;
+}
+
+void YIteratorCustomClass::next() {
     ++begin_;
 }

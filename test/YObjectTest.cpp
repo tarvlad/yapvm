@@ -18,12 +18,14 @@ TEST(YListTest, VectorCtr) {
 }
 
 TEST(YListTest, Iter) {
+    YObject obj { true, false };
     std::vector<YObject> vec = { YFloatObject {3.1415}, YIntObject { 42 }, YListObject {} };
     YListObject list {vec}; 
     YIterator* it = list.iter();
     int cnt = 0;
     while (it->has_next()) {
         cnt++;
+        // TODO set_mark(true)
         (**it).mark();
         it->next();
     }
@@ -57,6 +59,28 @@ TEST(YTupleTest, Iter) {
         EXPECT_EQ(true, tuple[i].is_marked());
     }
 }
+
+TEST(YCustomClassTest, CtrTest) {
+    YCustomClass user_class{}; 
+    YIntObject a { 5 };
+    user_class.add("a", &a);
+}
+
+TEST(YCustomClassTest, Iter) {
+    YCustomClass user_class{}; 
+    YIntObject a { 5 };
+    std::vector<YObject> vec = { YFloatObject {3.1415}, YIntObject { 42 }, YListObject {} };
+    YListObject list { vec }; 
+    user_class.add("a", &a);
+    user_class.add("list", &list);
+    YIterator* it = user_class.iter();
+    while (it->has_next()) {
+        (**it).mark();
+        it->next();
+    }
+    delete it;
+}
+
 int main() {
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
