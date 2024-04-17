@@ -7,8 +7,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-fsanitize=address)
 add_link_options(-fsanitize=address)
-include_directories(include)
 
+include_directories(include)
+include_directories(test_resources)
 
 set(SOURCE_ALL
    include/parser.h
@@ -28,6 +29,8 @@ set(SOURCE_ALL
    
    include/interpreter.h
    src/interpreter.cpp
+
+   test_resources/ast_test_data.h
 )
 
 
