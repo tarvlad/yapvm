@@ -5,8 +5,9 @@
 using namespace yapvm::ast;
 using namespace yapvm;
 
-yapvm::ast::BoolOp::BoolOp(const scoped_ptr<BoolOpKind> &op, const array<scoped_ptr<Expr>> &values) 
-    : op_{ op }, values_{ values } {}
+
+yapvm::ast::BoolOp::BoolOp(scoped_ptr<BoolOpKind> &&op, std::vector<scoped_ptr<Expr>> &&values) 
+    : op_{ std::move(op) }, values_{ std::move(values) } {}
 
 
 const scoped_ptr<BoolOpKind> &yapvm::ast::BoolOp::op() const {
@@ -14,13 +15,13 @@ const scoped_ptr<BoolOpKind> &yapvm::ast::BoolOp::op() const {
 }
 
 
-const array<scoped_ptr<Expr>> &yapvm::ast::BoolOp::values() const {
+const std::vector<scoped_ptr<Expr>> &yapvm::ast::BoolOp::values() const {
     return values_;
 }
 
 
-yapvm::ast::BinOp::BinOp(const scoped_ptr<Expr> &left, const scoped_ptr<BinOpKind> &op, const scoped_ptr<Expr> &right)
-    : left_{ left }, right_{ right }, op_{ op } {
+yapvm::ast::BinOp::BinOp(scoped_ptr<Expr> &&left, scoped_ptr<BinOpKind> &&op, scoped_ptr<Expr> &&right)
+    : left_{ std::move(left) }, right_{ std::move(right) }, op_{ std::move(op) } {
 }
 
 
@@ -39,8 +40,8 @@ const scoped_ptr<Expr> &yapvm::ast::BinOp::right() const {
 }
 
 
-yapvm::ast::UnaryOp::UnaryOp(const scoped_ptr<UnaryOpKind> &op, const scoped_ptr<Expr> &operand)
-    : op_{ op }, operand_{ operand } {
+yapvm::ast::UnaryOp::UnaryOp(scoped_ptr<UnaryOpKind> &&op, scoped_ptr<Expr> &&operand)
+    : op_{ std::move(op) }, operand_{ std::move(operand) } {
 }
 
 
@@ -54,8 +55,8 @@ const scoped_ptr<Expr> &yapvm::ast::UnaryOp::operand() const {
 }
 
 
-yapvm::ast::Compare::Compare(const scoped_ptr<Expr> &left, const array<scoped_ptr<CmpOpKind>> &ops, const array<scoped_ptr<Expr>> &comparators)
-    : left_{ left }, ops_{ ops }, comparators_{ comparators } {
+yapvm::ast::Compare::Compare(scoped_ptr<Expr> &&left, std::vector<scoped_ptr<CmpOpKind>> &&ops, std::vector<scoped_ptr<Expr>> &&comparators)
+    : left_{ std::move(left) }, ops_{ std::move(ops) }, comparators_{ std::move(comparators) } {
 }
 
 
@@ -64,18 +65,18 @@ const scoped_ptr<Expr> &yapvm::ast::Compare::left() const {
 }
 
 
-const array<scoped_ptr<CmpOpKind>> &yapvm::ast::Compare::ops() const {
+const std::vector<scoped_ptr<CmpOpKind>> &yapvm::ast::Compare::ops() const {
     return ops_;
 }
 
 
-const array<scoped_ptr<Expr>> &yapvm::ast::Compare::comparators() const {
+const std::vector<scoped_ptr<Expr>> &yapvm::ast::Compare::comparators() const {
     return comparators_;
 }
 
 
-yapvm::ast::Call::Call(const scoped_ptr<Expr> &func, const array<scoped_ptr<Expr>> &args)
-    : func_{ func }, args_{ args } {
+yapvm::ast::Call::Call(scoped_ptr<Expr> &&func, std::vector<scoped_ptr<Expr>> &&args)
+    : func_{ std::move(func) }, args_{ std::move(args) } {
 }
 
 
@@ -84,21 +85,21 @@ const scoped_ptr<Expr> &yapvm::ast::Call::func() const {
 }
 
 
-const array<scoped_ptr<Expr>> &yapvm::ast::Call::args() const {
+const std::vector<scoped_ptr<Expr>> &yapvm::ast::Call::args() const {
     return args_;
 }
 
 
-yapvm::ast::Constant::Constant(const scoped_ptr<YPrimitiveObject> &value)
-    :value_{ value } {}
+yapvm::ast::Constant::Constant(scoped_ptr<YPrimitiveObject> &&value)
+    :value_{ std::move(value) } {}
 
 
 const scoped_ptr<YPrimitiveObject> &yapvm::ast::Constant::value() const {
     return value_;
 }
 
-yapvm::ast::Attribute::Attribute(const scoped_ptr<Expr> &value, const std::string &attr, const scoped_ptr<ExprContext> &ctx)
-    : value_{ value }, attr_{ attr }, ctx_{ ctx } {
+yapvm::ast::Attribute::Attribute(scoped_ptr<Expr> &&value, std::string &&attr, scoped_ptr<ExprContext> &&ctx)
+    : value_{ std::move(value) }, attr_{ std::move(attr) }, ctx_{ std::move(ctx) } {
 }
 
 
@@ -117,8 +118,8 @@ const std::string &yapvm::ast::Attribute::attr() const {
 }
 
 
-yapvm::ast::Subscript::Subscript(const scoped_ptr<Expr> &value, const scoped_ptr<Expr> &key, const scoped_ptr<ExprContext> &ctx)
-    : key_{ key }, value_{ value }, ctx_{ ctx } {
+yapvm::ast::Subscript::Subscript(scoped_ptr<Expr> &&value, scoped_ptr<Expr> &&key, scoped_ptr<ExprContext> &&ctx)
+    : key_{ std::move(key) }, value_{ std::move(value) }, ctx_{ std::move(ctx) } {
 }
 
 
@@ -137,8 +138,8 @@ scoped_ptr<Expr> &yapvm::ast::Subscript::value() const {
 }
 
 
-yapvm::ast::Name::Name(const std::string &id, const scoped_ptr<ExprContext> &ctx)
-    : id_{ id }, ctx_{ ctx } {
+yapvm::ast::Name::Name(std::string &&id, scoped_ptr<ExprContext> &&ctx)
+    : id_{ std::move(id) }, ctx_{ std::move(ctx) } {
 }
 
 
@@ -151,13 +152,14 @@ const std::string &yapvm::ast::Name::id() const {
     return id_;
 }
 
-yapvm::ast::FunctionDef::FunctionDef(const std::string &name, const array<std::string> &args, const array<scoped_ptr<Stmt>> &body) 
-    : name_{ name }, args_{ args }, body_{ body }, returns_{ nullptr } {
+
+yapvm::ast::FunctionDef::FunctionDef(std::string &&name, std::vector<std::string> &&args, std::vector<scoped_ptr<Stmt>> &&body) 
+    : name_{ std::move(name) }, args_{ std::move(args) }, body_{ std::move(body) }, returns_{ nullptr } {
 }
 
 
-yapvm::ast::FunctionDef::FunctionDef(const std::string &name, const array<std::string> &args, const array<scoped_ptr<Stmt>> &body, const scoped_ptr<Expr> &returns)
-    : name_{ name }, args_{ args }, body_{ body }, returns_{ returns } {}
+yapvm::ast::FunctionDef::FunctionDef(std::string &&name, std::vector<std::string> &&args, std::vector<scoped_ptr<Stmt>> &&body, scoped_ptr<Expr> &&returns)
+    : name_{ std::move(name) }, args_{ std::move(args) }, body_{ std::move(body) }, returns_{ std::move(returns) } {}
 
 
 const std::string &yapvm::ast::FunctionDef::name() const {
@@ -165,12 +167,12 @@ const std::string &yapvm::ast::FunctionDef::name() const {
 }
 
 
-const array<std::string> &yapvm::ast::FunctionDef::args() const {
+const std::vector<std::string> &yapvm::ast::FunctionDef::args() const {
     return args_;
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::FunctionDef::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::FunctionDef::body() const {
     return body_;
 }
 
@@ -185,8 +187,8 @@ const scoped_ptr<Expr> &yapvm::ast::FunctionDef::returns() const {
 }
 
 
-yapvm::ast::ClassDef::ClassDef(const std::string &name, const array<scoped_ptr<Stmt>> &body)
-    : name_{ name }, body_{ body } {}
+yapvm::ast::ClassDef::ClassDef(std::string &&name, std::vector<scoped_ptr<Stmt>> &&body)
+    : name_{ std::move(name) }, body_{ std::move(body) } {}
 
 
 const std::string &yapvm::ast::ClassDef::name() const {
@@ -194,12 +196,12 @@ const std::string &yapvm::ast::ClassDef::name() const {
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::ClassDef::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::ClassDef::body() const {
     return body_;
 }
 
-yapvm::ast::Return::Return(const scoped_ptr<Expr> &value)
-    : value_{ value } {}
+yapvm::ast::Return::Return(scoped_ptr<Expr> &&value)
+    : value_{ std::move(value) } {}
 
 
 yapvm::ast::Return::Return() : value_{ nullptr } {}
@@ -215,12 +217,12 @@ const scoped_ptr<Expr> &yapvm::ast::Return::value() const {
 }
 
 
-yapvm::ast::Assign::Assign(const array<scoped_ptr<Expr>> &target, const scoped_ptr<Expr> &value)
-    : target_{ target }, value_{ value } {
+yapvm::ast::Assign::Assign(std::vector<scoped_ptr<Expr>> &&target, scoped_ptr<Expr> &&value)
+    : target_{ std::move(target) }, value_{ std::move(value) } {
 }
 
 
-const array<scoped_ptr<Expr>> &yapvm::ast::Assign::target() const {
+const std::vector<scoped_ptr<Expr>> &yapvm::ast::Assign::target() const {
     return target_;
 }
 
@@ -230,8 +232,8 @@ const scoped_ptr<Expr> &yapvm::ast::Assign::value() const {
 }
 
 
-yapvm::ast::AugAssign::AugAssign(const scoped_ptr<Expr> &target, const scoped_ptr<BinOpKind> &op, const scoped_ptr<Expr> &value)
-    : target_{ target }, op_{ op }, value_{ value } {
+yapvm::ast::AugAssign::AugAssign(scoped_ptr<Expr> &&target, scoped_ptr<BinOpKind> &&op, scoped_ptr<Expr> &&value)
+    : target_{ std::move(target) }, op_{ std::move(op) }, value_{ std::move(value) } {
 }
 
 
@@ -250,8 +252,8 @@ const scoped_ptr<Expr> &yapvm::ast::AugAssign::value() const {
 }
 
 
-yapvm::ast::While::While(const scoped_ptr<Expr> &test, const array<scoped_ptr<Stmt>> &body)
-    : test_{ test }, body_{ body } {
+yapvm::ast::While::While(scoped_ptr<Expr> &&test, std::vector<scoped_ptr<Stmt>> &&body)
+    : test_{ std::move(test) }, body_{ std::move(body) } {
 }
 
 
@@ -260,13 +262,13 @@ const scoped_ptr<Expr> &yapvm::ast::While::test() const {
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::While::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::While::body() const {
     return body_;
 }
 
 
-yapvm::ast::If::If(const scoped_ptr<Expr> &test, const array<scoped_ptr<Stmt>> &body, const array<scoped_ptr<Stmt>> &orelse)
-    : test_{ test }, body_{ body }, orelse_{ orelse } {
+yapvm::ast::If::If(scoped_ptr<Expr> &&test, std::vector<scoped_ptr<Stmt>> &&body, std::vector<scoped_ptr<Stmt>> &&orelse)
+    : test_{ std::move(test) }, body_{ std::move(body) }, orelse_{ std::move(orelse) } {
 }
 
 
@@ -275,18 +277,18 @@ const scoped_ptr<Expr> &yapvm::ast::If::test() const {
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::If::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::If::body() const {
     return body_;
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::If::orelse() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::If::orelse() const {
     return orelse_;
 }
 
 
-yapvm::ast::ExprStmt::ExprStmt(const scoped_ptr<Expr> &value)
-    : value_{ value } {
+yapvm::ast::ExprStmt::ExprStmt(scoped_ptr<Expr> &&value)
+    : value_{ std::move(value) } {
 }
 
 
@@ -295,17 +297,17 @@ const scoped_ptr<Expr> &yapvm::ast::ExprStmt::value() const {
 }
 
 
-yapvm::ast::Module::Module(const array<scoped_ptr<Stmt>> &body) 
-    : body_{ body } {}
+yapvm::ast::Module::Module(std::vector<scoped_ptr<Stmt>> &&body) 
+    : body_{ std::move(body) } {}
 
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::Module::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::Module::body() const {
     return body_;
 }
 
 
-yapvm::ast::Import::Import(const std::string &name) : name_{ name }{}
+yapvm::ast::Import::Import(std::string &&name) : name_{ std::move(name) }{}
 
 
 const std::string &yapvm::ast::Import::name() const {
@@ -313,8 +315,8 @@ const std::string &yapvm::ast::Import::name() const {
 }
 
 
-yapvm::ast::For::For(const scoped_ptr<Expr> &target, const scoped_ptr<Expr> &iter, const array<scoped_ptr<Stmt>> &body) 
-    : target_{ target }, iter_{ iter }, body_{ body } {
+yapvm::ast::For::For(scoped_ptr<Expr> &&target, scoped_ptr<Expr> &&iter, std::vector<scoped_ptr<Stmt>> &&body) 
+    : target_{ std::move(target) }, iter_{ std::move(iter) }, body_{ std::move(body) } {
 }
 
 
@@ -328,18 +330,18 @@ const scoped_ptr<Expr> &yapvm::ast::For::iter() const {
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::For::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::For::body() const {
     return body_;
 }
 
 
-yapvm::ast::WithItem::WithItem(const scoped_ptr<Expr> &context_expr)
-    : context_expr_{ context_expr }, optional_vars_{ nullptr } {
+yapvm::ast::WithItem::WithItem(scoped_ptr<Expr> &&context_expr)
+    : context_expr_{ std::move(context_expr) }, optional_vars_{ nullptr } {
 }
 
 
-yapvm::ast::WithItem::WithItem(const scoped_ptr<Expr> &context_expr, const scoped_ptr<Expr> &optional_vars)
-    : context_expr_{ context_expr }, optional_vars_{ optional_vars } {
+yapvm::ast::WithItem::WithItem(scoped_ptr<Expr> &&context_expr, scoped_ptr<Expr> &&optional_vars)
+    : context_expr_{ std::move(context_expr) }, optional_vars_{ std::move(optional_vars) } {
 }
 
 
@@ -358,15 +360,15 @@ bool yapvm::ast::WithItem::is_optional_var() const {
 }
 
 
-yapvm::ast::With::With(const array<scoped_ptr<WithItem>> &items, const array<scoped_ptr<Stmt>> &body)
-    : items_{ items }, body_{ body } {}
+yapvm::ast::With::With(std::vector<scoped_ptr<WithItem>> &&items, std::vector<scoped_ptr<Stmt>> &&body)
+    : items_{ std::move(items) }, body_{ std::move(body) } {}
 
 
-const array<scoped_ptr<WithItem>> &yapvm::ast::With::items() const {
+const std::vector<scoped_ptr<WithItem>> &yapvm::ast::With::items() const {
     return items_;
 }
 
 
-const array<scoped_ptr<Stmt>> &yapvm::ast::With::body() const {
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::With::body() const {
     return body_;
 }

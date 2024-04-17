@@ -26,7 +26,7 @@ scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos);
 
 
 static 
-array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &pos) {
+std::vector<scoped_ptr<Stmt>> generate_stmt_vec(const std::string &input, size_t &pos) {
     assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     if (input[pos] == ']') {
@@ -44,7 +44,7 @@ array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &po
         }
         break;
     }
-    array<scoped_ptr<Stmt>> result = std::move(statements);
+    std::vector<scoped_ptr<Stmt>> result = std::move(statements);
     assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return result;
@@ -52,7 +52,7 @@ array<scoped_ptr<Stmt>> generate_stmt_array(const std::string &input, size_t &po
 
 
 static
-array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &pos) {
+std::vector<scoped_ptr<Expr>> generate_expr_vec(const std::string &input, size_t &pos) {
     assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     if (input[pos] == ']') {
@@ -70,7 +70,7 @@ array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &po
         }
         break;
     }
-    array<scoped_ptr<Expr>> result = std::move(statements);
+    std::vector<scoped_ptr<Expr>> result = std::move(statements);
     assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return result;
@@ -78,7 +78,7 @@ array<scoped_ptr<Expr>> generate_expr_array(const std::string &input, size_t &po
 
 
 static 
-array<std::string> generate_function_args(const std::string &input, size_t &pos) {
+std::vector<std::string> generate_function_args(const std::string &input, size_t &pos) {
     assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     if (input[pos] == ']') {
@@ -104,7 +104,7 @@ array<std::string> generate_function_args(const std::string &input, size_t &pos)
         break;
     }
 
-    array<std::string> result = std::move(args);
+    std::vector<std::string> result = std::move(args);
 
     assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
@@ -118,8 +118,8 @@ scoped_ptr<Stmt> generate_import(const std::string &input, size_t &pos) {
 
     pos += sizeof("Import(names=[alias(name=") - 1;
     std::string name = extract_delimited_substring(input, pos);
-    scoped_ptr<Stmt> res = new Import{ name };
     pos += name.size() + 2;
+    scoped_ptr<Stmt> res = new Import{ std::move(name) };
 
     assume(sstrcmp(input, ")])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(")])") - 1;
@@ -136,16 +136,16 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
     assume(sstrcmp(input, ", args=arguments(posonlyargs=[], args=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", args=arguments(posonlyargs=[], args=") - 1;
 
-    array<std::string> args = generate_function_args(input, pos);
+    std::vector<std::string> args = generate_function_args(input, pos);
     assume(sstrcmp(input, ", kwonlyargs=[], kw_defaults=[], defaults=[]), body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", kwonlyargs=[], kw_defaults=[], defaults=[]), body=") - 1;
 
-    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
 
     assume(sstrcmp(input, ", decorator_list=[], type_params=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", decorator_list=[], type_params=[])") - 1;
 
-    return new FunctionDef{ name, args, body };
+    return new FunctionDef{ std::move(name), std::move(args), std::move(body) };
 }
 
 
@@ -159,11 +159,11 @@ scoped_ptr<Stmt> generate_class_def(const std::string &input, size_t &pos) {
 
     assume(sstrcmp(input, ", bases=[], keywords=[], body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", bases=[], keywords=[], body=") - 1;
-    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
 
     assume(sstrcmp(input, ", decorator_list=[], type_params=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", decorator_list=[], type_params=[])") - 1;
-    return new ClassDef{ name, body };
+    return new ClassDef{ std::move(name), std::move(body) };
 }
 
 
@@ -184,7 +184,7 @@ scoped_ptr<Stmt> generate_return(const std::string &input, size_t &pos) {
 
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new Return{ value };
+    return new Return{ std::move(value) };
 }
 
 
@@ -193,14 +193,14 @@ scoped_ptr<Stmt> generate_assign(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "Assign(targets=", pos));
     pos += sizeof("Assign(targets=") - 1;
 
-    array<scoped_ptr<Expr>> targets = generate_expr_array(input, pos);
+    std::vector<scoped_ptr<Expr>> targets = generate_expr_vec(input, pos);
     assume(sstrcmp(input, ", value=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", value=") - 1;
 
     scoped_ptr<Expr> value = generate_expr(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new Assign{ targets, value };
+    return new Assign{ std::move(targets), std::move(value) };
 }
 
 
@@ -229,7 +229,7 @@ generate_aug_assign(const std::string &input, size_t &pos) {
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    return new AugAssign{ target, op, value };
+    return new AugAssign{ std::move(target), std::move(op), std::move(value) };
 }
 
 
@@ -243,12 +243,12 @@ scoped_ptr<Stmt> generate_while(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", body=") - 1;
 
-    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
 
     assume(sstrcmp(input, ", orelse=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", orelse=[])") - 1;
 
-    return new While{ test, body };
+    return new While{ std::move(test), std::move(body) };
 }
 
 
@@ -267,12 +267,12 @@ scoped_ptr<Stmt> generate_for(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", body=") - 1;
     
-    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
     
     assume(sstrcmp(input, ", orelse=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", orelse=[])") - 1;
 
-    return new For{ target, iter, body };
+    return new For{ std::move(target), std::move(iter), std::move(body) };
 }
 
 
@@ -284,7 +284,7 @@ scoped_ptr<WithItem> generate_withitem(const std::string &input, size_t &pos) {
     scoped_ptr<Expr> context_expr = generate_expr(input, pos);
     if (input[pos] == ')') {
         pos++;
-        return new WithItem{ context_expr };
+        return new WithItem{ std::move(context_expr) };
     }
     
     assume(sstrcmp(input, ", optional_vars=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
@@ -294,12 +294,12 @@ scoped_ptr<WithItem> generate_withitem(const std::string &input, size_t &pos) {
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    return new WithItem{ context_expr, optional_vars };
+    return new WithItem{ std::move(context_expr), std::move(optional_vars) };
 }
 
 
 static
-array<scoped_ptr<WithItem>> generate_withitems(const std::string &input, size_t &pos) {
+std::vector<scoped_ptr<WithItem>> generate_withitems(const std::string &input, size_t &pos) {
     assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
@@ -318,7 +318,7 @@ array<scoped_ptr<WithItem>> generate_withitems(const std::string &input, size_t 
         }
         break;
     }
-    array<scoped_ptr<WithItem>> result = std::move(items);
+    std::vector<scoped_ptr<WithItem>> result = std::move(items);
     assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return result;
@@ -330,16 +330,16 @@ scoped_ptr<Stmt> generate_with(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "With(items=", pos));
 
     pos += sizeof("With(items=") - 1;
-    array<scoped_ptr<WithItem>> items = generate_withitems(input, pos);
+    std::vector<scoped_ptr<WithItem>> items = generate_withitems(input, pos);
 
     assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", body=") - 1;
 
-    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    return new With{ items, body };
+    return new With{ std::move(items), std::move(body) };
 }
 
 
@@ -353,16 +353,16 @@ scoped_ptr<Stmt> generate_if(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", body=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", body=") - 1;
 
-    array<scoped_ptr<Stmt>> body = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
 
     assume(sstrcmp(input, ", orelse=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", orelse=") - 1;
 
-    array<scoped_ptr<Stmt>> orelse = generate_stmt_array(input, pos);
+    std::vector<scoped_ptr<Stmt>> orelse = generate_stmt_vec(input, pos);
     
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new If{ test, body, orelse };
+    return new If{ std::move(test), std::move(body), std::move(orelse) };
 }
 
 
@@ -375,7 +375,7 @@ generate_expr_stmt(const std::string &input, size_t &pos) {
     scoped_ptr<Expr> expr = generate_expr(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new ExprStmt{ expr };
+    return new ExprStmt{ std::move(expr) };
 }
 
 
@@ -456,8 +456,8 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, "body=[", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof("body=[") - 1;
     
-    if (input[pos] == ']' && input[pos + 1] == ')') { //empty module
-        pos += 2;
+    if (input[pos] == ']' && sstrcmp(input, ", type_ignores=[])", pos + 1)) { //empty module
+        pos += sizeof(", type_ignores=[])") - 1 + 1;
         return new Module{ {} };
     }
 
@@ -473,11 +473,11 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
         }
         break;
     }
-    array<scoped_ptr<Stmt>> data = std::move(statements);
+    std::vector<scoped_ptr<Stmt>> data = std::move(statements);
 
     assume(sstrcmp(input, "], type_ignores=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof("], type_ignores=[])") - 1;
-    return new Module{ data };
+    return new Module{ std::move(data) };
 }
 
 
@@ -607,11 +607,11 @@ scoped_ptr<Expr> generate_bool_op(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", values=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", values=") - 1;
 
-    array<scoped_ptr<Expr>> body = generate_expr_array(input, pos);
+    std::vector<scoped_ptr<Expr>> body = generate_expr_vec(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    return new BoolOp{ op, body };
+    return new BoolOp{ std::move(op), std::move(body) };
 }
 
 
@@ -632,7 +632,7 @@ scoped_ptr<Expr> generate_bin_op(const std::string &input, size_t &pos) {
     scoped_ptr<Expr> right = generate_expr(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new BinOp{ left, op, right };
+    return new BinOp{ std::move(left), std::move(op), std::move(right) };
 }
 
 
@@ -650,12 +650,12 @@ scoped_ptr<Expr> generate_unary_op(const std::string &input, size_t &pos) {
 
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new UnaryOp{ op, operand };
+    return new UnaryOp{ std::move(op), std::move(operand) };
 }
 
 
 static 
-array<scoped_ptr<CmpOpKind>> generate_cmp_op_array(const std::string &input, size_t &pos) {
+std::vector<scoped_ptr<CmpOpKind>> generate_cmp_op_vec(const std::string &input, size_t &pos) {
     assume(input[pos] == '[', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
@@ -675,7 +675,7 @@ array<scoped_ptr<CmpOpKind>> generate_cmp_op_array(const std::string &input, siz
         break;
     }
     
-    array<scoped_ptr<CmpOpKind>> res = std::move(ops);
+    std::vector<scoped_ptr<CmpOpKind>> res = std::move(ops);
     assume(input[pos] == ']', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
     return res;
@@ -692,16 +692,16 @@ scoped_ptr<Expr> generate_compare(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", ops=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", ops=") - 1;
 
-    array<scoped_ptr<CmpOpKind>> ops = generate_cmp_op_array(input, pos);
+    std::vector<scoped_ptr<CmpOpKind>> ops = generate_cmp_op_vec(input, pos);
 
     assume(sstrcmp(input, ", comparators=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", comparators=") - 1;
 
-    array<scoped_ptr<Expr>> comparators = generate_expr_array(input, pos);
+    std::vector<scoped_ptr<Expr>> comparators = generate_expr_vec(input, pos);
 
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new Compare{ left, ops, comparators };
+    return new Compare{ std::move(left), std::move(ops), std::move(comparators) };
 }
 
 
@@ -715,11 +715,11 @@ scoped_ptr<Expr> generate_call(const std::string &input, size_t &pos) {
     assume(sstrcmp(input, ", args=", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", args=") - 1;
 
-    array<scoped_ptr<Expr>> args = generate_expr_array(input, pos);
+    std::vector<scoped_ptr<Expr>> args = generate_expr_vec(input, pos);
 
     assume(sstrcmp(input, ", keywords=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos += sizeof(", keywords=[])") - 1;
-    return new Call{ func, args };
+    return new Call{ std::move(func), std::move(args) };
 }
 
 
@@ -802,7 +802,7 @@ scoped_ptr<Expr> generate_constant(const std::string &input, size_t &pos) {
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 
-    return new Constant{ value };
+    return new Constant{ std::move(value) };
 }
 
 
@@ -844,7 +844,7 @@ scoped_ptr<Expr> generate_attribute(const std::string &input, size_t &pos) {
     scoped_ptr<ExprContext> ctx = generate_expr_context(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new Attribute{ value, attr, ctx };
+    return new Attribute{ std::move(value), std::move(attr), std::move(ctx) };
 }
 
 
@@ -865,7 +865,7 @@ scoped_ptr<Expr> generate_subscript(const std::string &input, size_t &pos) {
     scoped_ptr<ExprContext> ctx = generate_expr_context(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new Subscript{ value, slice, ctx };
+    return new Subscript{ std::move(value), std::move(slice), std::move(ctx) };
 }
 
 
@@ -884,7 +884,7 @@ scoped_ptr<Expr> generate_name(const std::string &input, size_t &pos) {
 
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
-    return new Name{ name, ctx };
+    return new Name{ std::move(name), std::move(ctx) };
 }
 
 

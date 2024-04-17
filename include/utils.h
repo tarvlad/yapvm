@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <sstream>
 #include <functional>
@@ -78,7 +79,7 @@ bool sstrcmp(const char *expr, const char *pattern, size_t offset);
 size_t cstrsz(const char *str);
 
 
-template<typename T, __scptr_copy_semantics CopySem = COPY>
+template<typename T>
 class scoped_ptr {
 private:
     T *ptr_;
@@ -90,23 +91,13 @@ public:
         delete ptr_;
     }
 
-    scoped_ptr(const scoped_ptr &) requires(CopySem == MOVE) = delete;
-
-    scoped_ptr(const scoped_ptr &p) requires(CopySem == COPY) : ptr_{ new T{ *p } } {}
+    scoped_ptr(const scoped_ptr &) = delete;
 
     scoped_ptr(scoped_ptr &&p) : ptr_{ p.ptr_ } {
         p.ptr_ = nullptr;
     }
 
-    scoped_ptr &operator=(const scoped_ptr &) requires(CopySem == MOVE) = delete;
-
-    scoped_ptr &operator=(const scoped_ptr &p) requires(CopySem == COPY) {
-        if (&p != this) {
-            delete ptr_;
-            ptr_ = new T{ *p };
-        }
-        return *this;
-    }
+    scoped_ptr &operator=(const scoped_ptr &) = delete;
 
     scoped_ptr &operator=(scoped_ptr &&p) {
         if (&p != this) {
@@ -148,7 +139,6 @@ public:
     }
 };
 
-
 template <typename T, typename W, typename Callable, typename... Args>
 scoped_ptr<W> conv_or(scoped_ptr<T> &&s, Callable call_if_error, Args&&... args) {
     T *t_val = s.steal();
@@ -159,121 +149,12 @@ scoped_ptr<W> conv_or(scoped_ptr<T> &&s, Callable call_if_error, Args&&... args)
     return w_val;
 }
 
-
 template<typename Callable, typename... Args>
 void assume(bool cond, Callable call_if_error, Args&&... args) {
     if (!cond) {
         std::invoke(call_if_error, std::forward<Args>(args)...);
     }
 }
-
-
-template<typename T, typename Allocator = std::allocator<T>>
-class array {
-private:
-    Allocator allocator_;
-    T *data_;
-    size_t size_;
-
-public:
-    array(const Allocator &allocator = Allocator{})
-        : data_{ nullptr }, size_{ 0 }, allocator_{ allocator } {}
-
-    array(const std::vector<T> &v) : array{ v.size() } {
-        for (size_t i = 0; i < v.size(); i++) {
-            data_[i] = v[i];
-        }
-    }
-
-    array(std::vector<T> &&v) : array{ v.size() } {
-        for (size_t i = 0; i < v.size(); i++) {
-            data_[i] = std::move(v[i]);
-        }
-    }
-
-    array(size_t size, const Allocator &allocator = Allocator{})
-        : data_{ allocator_.allocate(size) }, size_{ size }, allocator_{ allocator } {
-        for (size_t i = 0; i < size_; ++i) {
-            if constexpr (std::is_fundamental_v<T>) {
-                data_[i] = T{};  // Directly initialize primitive types to zero
-            } else {
-                std::construct_at(data_ + i);  // Use std::construct_at for non-primitive types
-            }
-        }
-    }
-
-    array(const array &other)
-        : data_{ allocator_.allocate(other.size_) }, size_{ other.size_ }, allocator_{ other.allocator_ } {
-        std::uninitialized_copy(other.begin(), other.end(), begin());
-    }
-
-    array &operator=(const array &other) {
-        if (this != &other) {
-            array temp(other);
-            swap(temp);
-        }
-        return *this;
-    }
-
-    array(array &&other) noexcept
-        : data_{ other.data_ }, size_{ other.size_ }, allocator_{ std::move(other.allocator_) } {
-        other.data_ = nullptr;
-        other.size_ = 0;
-    }
-
-    array &operator=(array &&other) noexcept {
-        if (this != &other) {
-            std::swap(data_, other.data_);
-            std::swap(size_, other.size_);
-            std::swap(allocator_, other.allocator_);
-        }
-        return *this;
-    }
-
-    ~array() {
-        if (data_) {
-            for (size_t i = 0; i < size_; ++i) {
-                std::destroy_at(data_ + i);  // Use std::destroy_at
-            }
-            allocator_.deallocate(data_, size_);
-        }
-    }
-
-    T &operator[](size_t index) {
-        return data_[index];
-    }
-
-    const T &operator[](size_t index) const {
-        return data_[index];
-    }
-
-    size_t size() const noexcept {
-        return size_;
-    }
-
-    T *begin() noexcept {
-        return data_;
-    }
-
-    const T *begin() const noexcept {
-        return data_;
-    }
-
-    T *end() noexcept {
-        return data_ + size_;
-    }
-
-    const T *end() const noexcept {
-        return data_ + size_;
-    }
-
-    void swap(array &other) noexcept {
-        std::swap(data_, other.data_);
-        std::swap(size_, other.size_);
-        std::swap(allocator_, other.allocator_);
-    }
-};
-
 
 std::string extract_delimited_substring(const std::string &str, size_t pos);
 
