@@ -443,6 +443,7 @@ scoped_ptr<Stmt> generate_stmt(const std::string &input, size_t &pos) {
     }
 
     parse_error(pos, __FILE__, std::to_string(__LINE__));
+    assert(false);
 }
 
 
@@ -592,6 +593,7 @@ scoped_ptr<OperatorKind> generate_operator_kind(const std::string &input, size_t
     }
 
     parse_error(pos, __FILE__, std::to_string(__LINE__));
+    assert(false);
 }
 
 
@@ -787,6 +789,7 @@ scoped_ptr<YPrimitiveObject> generate_constant_value(const std::string &input, s
     }
 
     parse_error(pos, __FILE__, std::to_string(__LINE__));
+    assert(false);
 }
 
 
@@ -819,6 +822,7 @@ scoped_ptr<ExprContext> generate_expr_context(const std::string &input, size_t &
     }
 
     parse_error(pos, __FILE__, std::to_string(__LINE__));
+    assert(false);
 }
 
 
@@ -914,6 +918,7 @@ scoped_ptr<Expr> generate_expr(const std::string &input, size_t &pos) {
         return generate_name(input, pos);
     }
     parse_error(pos, __FILE__, std::to_string(__LINE__));
+    assert(false);
 }
 
 
