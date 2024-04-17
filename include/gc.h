@@ -7,49 +7,36 @@
 #include <vector>
 
 namespace yapvm {
-namespace gc {
+namespace ygc {
 
 using namespace yapvm::yobjects;
 
-// wrapper for YObject
-class GCObject {
-    YObject *obj_;
-    bool is_marked_;
-    std::vector<GCObject *> kids_;
-
+// TODO
+class YScope {
 public:
-    GCObject(YObject *val);
-
-    bool &is_marked();
-    YObject *obj();
-    std::vector<GCObject *> &kids();
+    std::map<std::string, YObject*> scope_;
+    YScope(const std::map<std::string, YObject*> &scope) : scope_(scope) {};
 };
 
 // TODO
-class Scope {
+class YHeap {
 public:
-    std::map<std::string, GCObject *> m_;
-};
-
-// TODO
-class Heap {
-public:
-    std::vector<GCObject *> objs_;
+    std::vector<YObject*> objs_;
+    YHeap(const std::vector<YObject*> &objs) : objs_(objs) {};
 };
 
 
-class GC {
-    Scope *root_;
-    Heap *heap_;
-
-private:
+class YGC {
+    YScope *root_;
+    YHeap *heap_;
+// private:
+public:
     void mark();
     void sweep();
-public:
+    YGC(YScope *root, YHeap *heap) : root_(root), heap_(heap) {};
     void collect();
 };
 
 
-
-} // namespace gc
+} // namespace ygc
 } // namespace yapvm
