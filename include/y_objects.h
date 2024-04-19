@@ -14,8 +14,8 @@ static_assert(sizeof(void *) == 8); // for MSVC x64 compatibility
 using ssize_t = long long;
 #endif
 
-namespace yapvm {
-namespace yobjects {
+
+namespace yapvm::yobjects {
 
 class YIterator;
 
@@ -57,10 +57,10 @@ class YIteratorCustomClass : public YIterator {
 
 public: 
     YIteratorCustomClass(const std::unordered_map<std::string, YObject*>::iterator &begin, const std::unordered_map<std::string, YObject*>::iterator &end);
-    bool has_next();
-    YObject &operator*();
-    YIterator &operator++();
-    void next();
+    bool has_next() override;
+    YObject &operator*() override;
+    YIterator &operator++() override;
+    void next() override;
 };
 
 class YIteratorList : public YIterator {
@@ -69,10 +69,10 @@ class YIteratorList : public YIterator {
 
 public: 
     YIteratorList(const std::deque<YObject>::iterator &begin, const std::deque<YObject>::iterator &end);
-    bool has_next();
-    YObject &operator*();
-    YIterator &operator++();
-    void next();
+    bool has_next() override;
+    YObject &operator*() override;
+    YIterator &operator++() override;
+    void next() override;
 };
 
 class YIteratorTuple : public YIterator {
@@ -81,10 +81,10 @@ class YIteratorTuple : public YIterator {
 
 public: 
     YIteratorTuple(const std::vector<YObject>::iterator &begin, const std::vector<YObject>::iterator &end);
-    bool has_next();
-    YObject &operator*();
-    YIterator &operator++();
-    void next();
+    bool has_next() override;
+    YObject &operator*() override;
+    YIterator &operator++() override;
+    void next() override;
 };
 
 class YCustomClass : public YObject {
@@ -94,7 +94,7 @@ public:
     YCustomClass() : YObject { false, true } {};
     YCustomClass(const std::unordered_map<std::string, YObject*> &dict);
     void add(const std::string &key, YObject *val);
-    YIterator *iter();
+    YIterator *iter() override;
 };
 
 
@@ -111,7 +111,7 @@ class YBoolObject : public YPrimitiveObject {
 public:
     YBoolObject(bool value);
     bool value() const;
-    size_t hash() { return (value_) ? 1 : 0;}
+    size_t hash() const { return (value_) ? 1 : 0;}
 };
 
 class YStringObject : public YPrimitiveObject {
@@ -138,7 +138,7 @@ class YIntObject : public YPrimitiveObject {
 public:
     YIntObject(ssize_t value);
     ssize_t value() const;
-    size_t hash() { return std::hash<ssize_t>{}(value_); }
+    size_t hash() const { return std::hash<ssize_t>{}(value_); }
 };
 
 
@@ -155,7 +155,7 @@ public:
 
     YListObject &operator=(const YListObject &other);
 
-    YIterator *iter();
+    YIterator *iter() override;
 
     std::deque<YObject> &value();
 
@@ -179,7 +179,7 @@ public:
 
     YObject &operator[](size_t index);
 
-    YIterator *iter();
+    YIterator *iter() override;
 
     size_t size() const;
     size_t hash();
@@ -207,4 +207,4 @@ public:
 };
 
 }
-}
+

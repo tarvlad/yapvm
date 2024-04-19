@@ -21,7 +21,7 @@ const std::vector<scoped_ptr<Expr>> &yapvm::ast::BoolOp::values() const {
 
 
 yapvm::ast::BinOp::BinOp(scoped_ptr<Expr> &&left, scoped_ptr<BinOpKind> &&op, scoped_ptr<Expr> &&right)
-    : left_{ std::move(left) }, right_{ std::move(right) }, op_{ std::move(op) } {
+    : left_{ std::move(left) }, op_{ std::move(op) }, right_{ std::move(right) } {
 }
 
 
@@ -119,7 +119,7 @@ const std::string &yapvm::ast::Attribute::attr() const {
 
 
 yapvm::ast::Subscript::Subscript(scoped_ptr<Expr> &&value, scoped_ptr<Expr> &&key, scoped_ptr<ExprContext> &&ctx)
-    : key_{ std::move(key) }, value_{ std::move(value) }, ctx_{ std::move(ctx) } {
+    : value_{ std::move(value) }, key_{ std::move(key) }, ctx_{ std::move(ctx) } {
 }
 
 

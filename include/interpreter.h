@@ -2,9 +2,8 @@
 
 #include "ast.h"
 
-namespace yapvm {
-namespace interpreter {
+
+namespace yapvm::interpreter {
 using namespace yapvm::ast;
 
-}
 }

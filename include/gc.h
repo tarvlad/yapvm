@@ -1,13 +1,12 @@
 #pragma once
 
 #include "y_objects.h"
-#include <deque>
 #include <map>
 #include <string>
 #include <vector>
 
-namespace yapvm {
-namespace ygc {
+
+namespace yapvm::ygc {
 
 using namespace yapvm::yobjects;
 
@@ -38,5 +37,4 @@ public:
 };
 
 
-} // namespace ygc
-} // namespace yapvm
+} // namespace yapvm::ygc

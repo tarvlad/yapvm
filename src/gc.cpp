@@ -1,4 +1,5 @@
 #include "gc.h"
+#include <deque>
 
 using namespace yapvm::ygc;
 
