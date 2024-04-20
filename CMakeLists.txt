@@ -12,25 +12,28 @@ include_directories(include)
 include_directories(test_resources)
 
 set(SOURCE_ALL
-   include/parser.h
-   src/parser.cpp
-   
-   include/utils.h
-   src/utils.cpp
-   
-   include/ast.h
-   src/ast.cpp
-   
-   include/y_objects.h
-   src/y_objects.cpp
-   
-   include/gc.h
-   src/gc.cpp
-   
-   include/interpreter.h
-   src/interpreter.cpp
+    include/parser.h
+    src/parser.cpp
 
-   test_resources/global_ast_test_data.h
+    include/utils.h
+    src/utils.cpp
+
+    include/ast.h
+    src/ast.cpp
+
+    include/y_objects.h
+    src/y_objects.cpp
+
+    include/gc.h
+    src/gc.cpp
+
+    include/interpreter.h
+    src/interpreter.cpp
+
+    test_resources/global_ast_test_data.h
+
+    include/allocator.h
+    src/allocator.cpp
 )
 
 

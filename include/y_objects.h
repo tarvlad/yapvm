@@ -197,10 +197,9 @@ public:
     YDictObject(const YTupleObject &other);
     YDictObject &operator=(const YTupleObject &other);
 
-    const YObject &operator[](size_t index) const;
+    const YObject &operator[](YObject *key) const;
 
-    YIterator *begin();
-    YIterator *end();
+    YIterator *iter() const;
 
     size_t size() const;
     */
