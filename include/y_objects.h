@@ -5,7 +5,8 @@
 #include <map>
 #include <deque>
 #include <functional>
-#include <sys/types.h>
+
+#include "kvstorage.h"
 #include "utils.h"
 
 
@@ -31,8 +32,8 @@ public:
     bool &is_marked();
     // void mark();
     virtual YIterator *iter() { return nullptr; };
-    virtual size_t hash() const {return 0;};
-    virtual bool operator==(const YObject &other) const {return 0;};
+    virtual size_t hash() const = 0;
+    virtual bool operator==(const YObject &other) const {return false;};
     virtual ~YObject() = default;
 };
 
@@ -56,7 +57,10 @@ class YIteratorCustomClass : public YIterator {
     std::unordered_map<std::string, YObject*>::iterator end_;
 
 public: 
-    YIteratorCustomClass(const std::unordered_map<std::string, YObject*>::iterator &begin, const std::unordered_map<std::string, YObject*>::iterator &end);
+    YIteratorCustomClass(
+        const std::unordered_map<std::string, YObject*>::iterator &begin,
+        const std::unordered_map<std::string, YObject*>::iterator &end
+    );
     bool has_next() override;
     YObject &operator*() override;
     YIterator &operator++() override;
@@ -111,7 +115,7 @@ class YBoolObject : public YPrimitiveObject {
 public:
     YBoolObject(bool value);
     bool value() const;
-    size_t hash() const { return (value_) ? 1 : 0;}
+    size_t hash() const override { return (value_) ? 1 : 0;}
 };
 
 class YStringObject : public YPrimitiveObject {
@@ -120,7 +124,7 @@ class YStringObject : public YPrimitiveObject {
 public:
     YStringObject(const std::string &value);
     const std::string &value() const;
-    size_t hash() { return std::hash<std::string>{}(value_); }
+    size_t hash() const override { return std::hash<std::string>{}(value_); }
 };
 
 class YFloatObject : public YPrimitiveObject {
@@ -129,7 +133,7 @@ class YFloatObject : public YPrimitiveObject {
 public:
     YFloatObject(double value);
     double value() const;
-    size_t hash() { return std::hash<double>{}(value_); }
+    size_t hash() const override { return std::hash<double>{}(value_); }
 };
 
 class YIntObject : public YPrimitiveObject {
@@ -138,7 +142,7 @@ class YIntObject : public YPrimitiveObject {
 public:
     YIntObject(ssize_t value);
     ssize_t value() const;
-    size_t hash() const { return std::hash<ssize_t>{}(value_); }
+    size_t hash() const override { return std::hash<ssize_t>{}(value_); }
 };
 
 
@@ -186,7 +190,7 @@ public:
 };
 
 class YDictObject : public YObject {
-    std::map<YObject*, int> dict_;
+    KVStorage<YObject *, YObject *> dict_;
 
 public:
     YDictObject() : YObject { false, true } {};

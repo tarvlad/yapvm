@@ -34,6 +34,9 @@ set(SOURCE_ALL
 
     include/allocator.h
     src/allocator.cpp
+
+    include/kvstorage.h
+    include/kvstorage_element.h
 )
 
 
