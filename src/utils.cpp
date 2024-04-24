@@ -74,8 +74,46 @@ size_t yapvm::cstrsz(const char *str) {
 }
 
 
-__CheckResObj yapvm::check(bool cond) {
-    return __CheckResObj{ cond };
+__CheckResObj yapvm::check(bool cond) { return __CheckResObj{cond}; }
+
+
+std::string yapvm::exec(const std::string &s) {
+    const char *cmd = s.c_str();
+    std::string result;
+    FILE *pipe = popen(cmd, "r");
+    if (!pipe)
+        throw std::runtime_error("exec(const char *) error");
+
+    try {
+        char buffer[128];
+        while (fgets(buffer, sizeof buffer, pipe) != nullptr) {
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
+
+
+std::string yapvm::trim(const std::string &s) {
+    if (s.size() == 0) {
+        return "";
+    }
+
+    size_t i = s.size() - 1;
+    while (true) {
+        if (s[i] != ' ' && s[i] != '\n' && s[i] != '\r' && s[i] != '\t') {
+            break;
+        }
+        if (i == 0) {
+            break;
+        }
+        i--;
+    }
+    return s.substr(0, i + 1);
 }
 
 

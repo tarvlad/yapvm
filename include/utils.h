@@ -143,12 +143,30 @@ scoped_ptr<W> conv_or(scoped_ptr<T> &&s, Callable call_if_error, Args&&... args)
     return w_val;
 }
 
+
+template <typename From, typename To, typename Callable, typename... Args>
+To *checked_cast(From *from, Callable call_if_error, Args&& ... args) {
+    To *to = dynamic_cast<To *>(from);
+    if (to == nullptr) {
+        std::invoke(call_if_error, std::forward<Args>(args)...);
+    }
+    return to;
+}
+
+
 template<typename Callable, typename... Args>
 void assume(bool cond, Callable call_if_error, Args&&... args) {
     if (!cond) {
         std::invoke(call_if_error, std::forward<Args>(args)...);
     }
 }
+
+
+std::string exec(const std::string &s);
+
+
+std::string trim(const std::string &s);
+
 
 std::string extract_delimited_substring(const std::string &str, size_t pos);
 
