@@ -12,7 +12,7 @@ using namespace yapvm::ast;
 using namespace yapvm;
 
 
-static void parse_error(size_t pos, std::string file, std::string line) {
+static void parse_error(size_t pos, const std::string &file, const std::string &line) {
     throw std::runtime_error("Error while module generation at pos [" + std::to_string(pos) + "], throwed at " + file + " on line " + line);
 }
 
@@ -762,11 +762,11 @@ size_t try_tokenize_float(const std::string &str, size_t cursor_pos) {
 
 
 static 
-scoped_ptr<YPrimitiveObject> generate_constant_value(const std::string &input, size_t &pos) {
+scoped_ptr<yobjects::YObject> generate_constant_value(const std::string &input, size_t &pos) {
     if (input[pos] == '\'') {
         std::string val = extract_delimited_substring(input, pos);
         pos += val.size() + 2;
-        scoped_ptr<YPrimitiveObject> obj = new YStringObject{ val };
+        scoped_ptr obj = yobjects::constr_ystring(val);;
         return obj;
     }
 
@@ -775,7 +775,7 @@ scoped_ptr<YPrimitiveObject> generate_constant_value(const std::string &input, s
         std::string s_val = input.substr(pos, possible_float_len);
         pos += possible_float_len;
         double val = from_str<double>(s_val);
-        scoped_ptr<YPrimitiveObject> obj = new YFloatObject{ val };
+        scoped_ptr obj = yobjects::constr_yfloat(val);
         return obj;
     }
 
@@ -784,7 +784,7 @@ scoped_ptr<YPrimitiveObject> generate_constant_value(const std::string &input, s
         std::string s_val = input.substr(pos, possible_int_len);
         pos += possible_int_len;
         ssize_t val = from_str<ssize_t>(s_val);
-        scoped_ptr<YPrimitiveObject> obj = new YIntObject{ val };
+        scoped_ptr obj = yobjects::constr_yint(val);
         return obj;
     }
 
@@ -798,7 +798,7 @@ scoped_ptr<Expr> generate_constant(const std::string &input, size_t &pos) {
     assert(sstrcmp(input, "Constant(value=", pos));
 
     pos += sizeof("Constant(value=") - 1;
-    scoped_ptr<YPrimitiveObject> value = generate_constant_value(input, pos);
+    scoped_ptr value = generate_constant_value(input, pos);
     assume(input[pos] == ')', parse_error, pos, __FILE__, std::to_string(__LINE__));
     pos++;
 

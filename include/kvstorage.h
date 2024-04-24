@@ -36,7 +36,6 @@ template <
 	typename DataAllocator = std::allocator<KVStorageElement<Key, Value>>
 >
 class KVStorage {
-private:
 	static_assert(OccupacyRateReallocUpPercentage < 100);
 	static_assert(OccupacyRateReallocDownPercentage < OccupacyRateReallocUpPercentage);
 	static_assert(ReduceDeletedPercentage < 50);
@@ -162,12 +161,12 @@ private:
 			if (ctr++ > capacity()) {
 				return false;
 			}
-			else if (!_data[pos].exists) {
+			if (!_data[pos].exists) {
 				std::construct_at(&_data[pos], key, value);
 
 				break;
 			}
-			else if (_data[pos].deleted) {
+			if (_data[pos].deleted) {
 				std::construct_at(&_data[pos], key, value);
 				_deletedCtr--;
 
@@ -192,14 +191,11 @@ private:
 		std::optional<std::reference_wrapper<KVStorageElement<Key, Value>>> ret;
 		size_t ctr = 0;
 
-		for (;;) {
-			if (ctr++ > capacity()) {
+		while (ctr++ <= capacity()) {
+			if (!_data[pos].exists) {
 				break;
 			}
-			else if (!_data[pos].exists) {
-				break;
-			}
-			else if (!_data[pos].deleted && KeyEqual{}(_data[pos].key, key)) {
+			if (!_data[pos].deleted && KeyEqual{}(_data[pos].key, key)) {
 				ret.emplace(std::reference_wrapper<KVStorageElement<Key, Value>>(_data[pos]));
 
 				break;
@@ -217,14 +213,11 @@ private:
 		std::optional<std::reference_wrapper<KVStorageElement<Key, Value>>> ret;
 		size_t ctr = 0;
 
-		for (;;) {
-			if (ctr++ > capacity()) {
+		while (ctr++ <= capacity()) {
+			if (!_data[pos].exists) {
 				break;
 			}
-			else if (!_data[pos].exists) {
-				break;
-			}
-			else if (!_data[pos].deleted && KeyEqual{}(_data[pos].key, key)) {
+			if (!_data[pos].deleted && KeyEqual{}(_data[pos].key, key)) {
 				ret.emplace(std::reference_wrapper<KVStorageElement<Key, Value>>(_data[pos]));
 				_data[pos].deleted = true;
 
@@ -256,7 +249,7 @@ public:
 
 
 	KVStorage()
-			: _size(0), _capacitiesIdx(0), _dataAllocator(), _deletedCtr(0) {
+			: _capacitiesIdx(0), _dataAllocator(), _size(0), _deletedCtr(0) {
 		_data = _dataAllocator.allocate(capacity());
 		NULLCHECK(_data);
 
@@ -314,5 +307,13 @@ public:
 
 	std::optional<std::reference_wrapper<KVStorageElement<Key, Value>>> del(Key&& key) {
 		return __del(std::move(key));
+	}
+
+    std::optional<std::reference_wrapper<Value>> operator[](const Key &key) {
+        using element_t = std::reference_wrapper<KVStorageElement<Key, Value>>;
+        if (std::optional<element_t> kv_element = find(key); kv_element.has_value()) {
+            return std::optional{ std::reference_wrapper{ kv_element.value().get().value } };
+        }
+        return std::nullopt;
 	}
 };

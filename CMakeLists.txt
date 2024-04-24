@@ -12,78 +12,89 @@ include_directories(include)
 include_directories(test_resources)
 
 set(SOURCE_ALL
-    include/parser.h
-    src/parser.cpp
+        include/parser.h
+        src/parser.cpp
 
-    include/utils.h
-    src/utils.cpp
+        include/utils.h
+        src/utils.cpp
 
-    include/ast.h
-    src/ast.cpp
+        include/ast.h
+        src/ast.cpp
 
-    include/y_objects.h
-    src/y_objects.cpp
+        include/y_objects.h
+        src/y_objects.cpp
 
-    include/gc.h
-    src/gc.cpp
+        include/gc.h
+        src/gc.cpp
 
-    include/interpreter.h
-    src/interpreter.cpp
+        include/interpreter.h
+        src/interpreter.cpp
 
-    test_resources/global_ast_test_data.h
+        test_resources/global_ast_test_data.h
 
-    include/allocator.h
-    src/allocator.cpp
+        include/allocator.h
+        src/allocator.cpp
 
-    include/kvstorage.h
-    include/kvstorage_element.h
+        include/kvstorage.h
+        include/kvstorage_element.h
 )
 
 
-add_executable(yapvm 
-  src/main.cpp
-  ${SOURCE_ALL}
+add_executable(yapvm
+        src/main.cpp
+        ${SOURCE_ALL}
 )
 
 
 include(FetchContent)
 FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-add_executable(y_object_test 
-  test/y_object_test.cpp
-  ${SOURCE_ALL}
+add_executable(y_object_test
+        test/y_object_test.cpp
+        ${SOURCE_ALL}
 )
 
 add_executable(ygc_test
-  test/ygc_test.cpp
-  ${SOURCE_ALL}
+        test/ygc_test.cpp
+        ${SOURCE_ALL}
 )
 
 add_executable(parser_test
-  test/parser_test.cpp
-  ${SOURCE_ALL}
+        test/parser_test.cpp
+        ${SOURCE_ALL}
+)
+
+
+add_executable(kv_storage_test
+        test/kv_storage_test.cpp
+        ${SOURCE_ALL}
 )
 
 
 target_link_libraries(
-  y_object_test
-  GTest::gtest_main
+        y_object_test
+        GTest::gtest_main
 )
 
 target_link_libraries(
-  ygc_test
-  GTest::gtest_main
+        ygc_test
+        GTest::gtest_main
 )
 
 target_link_libraries(
-  parser_test
-  GTest::gtest_main
+        parser_test
+        GTest::gtest_main
+)
+
+target_link_libraries(
+        kv_storage_test
+        GTest::gtest_main
 )
 
 
@@ -91,3 +102,4 @@ include(GoogleTest)
 gtest_discover_tests(y_object_test)
 gtest_discover_tests(ygc_test)
 gtest_discover_tests(parser_test)
+gtest_discover_tests(kv_storage_test)

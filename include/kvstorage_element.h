@@ -1,9 +1,10 @@
 /* Key-value storage implemented by hashset with open addressing
-* main file: KVStorage.hpp
+ * main file: kvstorage.h
  *
  * (C) V.Tarasov, Lavrentyev Institute of Hydrodynamics SB RAS, 2023
  *     tarvlad@inbox.ru
  */
+#pragma once
 
 
 template <
@@ -11,15 +12,12 @@ template <
     typename Value
 >
 struct KVStorageElement {
-public:
     Key key;
     Value value;
     bool exists;
     bool deleted;
 
-    KVStorageElement() :
-        exists(false) {
-
+    KVStorageElement() : exists(false), deleted(false) {
     }
 
 
@@ -30,7 +28,7 @@ public:
         exists(e.exists) {}
 
 
-    KVStorageElement(KVStorageElement<Key, Value>&& e) :
+    KVStorageElement(KVStorageElement&& e) noexcept :
         key(std::move(e.key)),
         value(std::move(e.value)),
         deleted(e.deleted),
@@ -74,7 +72,7 @@ public:
     }
 
 
-    KVStorageElement& operator=(KVStorageElement&& e) {
+    KVStorageElement& operator=(KVStorageElement&& e) noexcept {
         key = std::move(e.key);
         value = std::move(e.value);
         deleted = e.deleted;

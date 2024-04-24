@@ -28,12 +28,11 @@ public:
 class YGC {
     YScope *root_;
     YHeap *heap_;
-// private:
 public:
-    void mark();
-    void sweep();
+    void mark() const;
+    void sweep() const;
     YGC(YScope *root, YHeap *heap) : root_(root), heap_(heap) {};
-    void collect();
+    void collect() const;
 };
 
 

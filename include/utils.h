@@ -1,14 +1,9 @@
 #pragma once
 
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <sstream>
 #include <functional>
-#include <memory>
-#include <algorithm>
-#include <concepts>
-#include <type_traits>
 
 
 namespace yapvm {
@@ -81,7 +76,6 @@ size_t cstrsz(const char *str);
 
 template<typename T>
 class scoped_ptr {
-private:
     T *ptr_;
 
 public:
@@ -93,13 +87,13 @@ public:
 
     scoped_ptr(const scoped_ptr &) = delete;
 
-    scoped_ptr(scoped_ptr &&p) : ptr_{ p.ptr_ } {
+    scoped_ptr(scoped_ptr &&p) noexcept : ptr_{ p.ptr_ } {
         p.ptr_ = nullptr;
     }
 
     scoped_ptr &operator=(const scoped_ptr &) = delete;
 
-    scoped_ptr &operator=(scoped_ptr &&p) {
+    scoped_ptr &operator=(scoped_ptr &&p) noexcept {
         if (&p != this) {
             delete ptr_;
             ptr_ = p.ptr_;

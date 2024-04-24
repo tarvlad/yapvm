@@ -1,1 +1,0 @@
-change conv_or, create method for cast-constructor of scoped_ptr???

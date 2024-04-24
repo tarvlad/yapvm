@@ -1,16 +1,16 @@
 #pragma once
 
 
-#include "y_objects.h"
 #include <string>
 #include <vector>
 #include "utils.h"
+#include "y_objects.h"
 
+namespace yapvm::yobjects {
+class YObject;
+}
 
-namespace yapvm {
-namespace ast {
-
-using namespace yapvm::yobjects;
+namespace yapvm::ast {
 
 class Node {
 public:
@@ -84,6 +84,7 @@ public:
 
     const scoped_ptr<Expr> &context_expr() const;
     const scoped_ptr<Expr> &optional_vars() const;
+
     bool is_optional_var() const;
 };
 
@@ -130,11 +131,8 @@ class Compare : public Expr {
     std::vector<scoped_ptr<Expr>> comparators_;
 
 public:
-    Compare(
-        scoped_ptr<Expr> &&left, 
-        std::vector<scoped_ptr<CmpOpKind>> &&ops, 
-        std::vector<scoped_ptr<Expr>> &&comparators
-    );
+    Compare(scoped_ptr<Expr> &&left, std::vector<scoped_ptr<CmpOpKind>> &&ops,
+            std::vector<scoped_ptr<Expr>> &&comparators);
 
     const scoped_ptr<Expr> &left() const;
     const std::vector<scoped_ptr<CmpOpKind>> &ops() const;
@@ -155,12 +153,12 @@ public:
 
 
 class Constant : public Expr {
-    scoped_ptr<YPrimitiveObject> value_;
+    scoped_ptr<yobjects::YObject> value_;
 
 public:
-    Constant(scoped_ptr<YPrimitiveObject> &&value);
+    Constant(scoped_ptr<yobjects::YObject> &&value);
 
-    const scoped_ptr<YPrimitiveObject> &value() const;
+    const scoped_ptr<yobjects::YObject> &value() const;
 };
 
 
@@ -212,7 +210,7 @@ class Stmt : public Node {};
 
 class Module : public Node {
     std::vector<scoped_ptr<Stmt>> body_;
-    
+
 public:
     Module(std::vector<scoped_ptr<Stmt>> &&body);
 
@@ -238,7 +236,8 @@ class FunctionDef : public Stmt {
 
 public:
     FunctionDef(std::string &&name, std::vector<std::string> &&args, std::vector<scoped_ptr<Stmt>> &&body);
-    FunctionDef(std::string &&name, std::vector<std::string> &&args, std::vector<scoped_ptr<Stmt>> &&body, scoped_ptr<Expr> &&returns);
+    FunctionDef(std::string &&name, std::vector<std::string> &&args, std::vector<scoped_ptr<Stmt>> &&body,
+                scoped_ptr<Expr> &&returns);
 
     const std::string &name() const;
     const std::vector<std::string> &args() const;
@@ -358,5 +357,4 @@ class Break : public Stmt {};
 class Continue : public Stmt {};
 
 
-} // namespace ast
-} // namespace yapvm
+} // namespace yapvm::ast

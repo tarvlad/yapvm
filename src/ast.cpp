@@ -6,7 +6,7 @@ using namespace yapvm::ast;
 using namespace yapvm;
 
 
-yapvm::ast::BoolOp::BoolOp(scoped_ptr<BoolOpKind> &&op, std::vector<scoped_ptr<Expr>> &&values) 
+yapvm::ast::BoolOp::BoolOp(scoped_ptr<BoolOpKind> &&op, std::vector<scoped_ptr<Expr>> &&values)
     : op_{ std::move(op) }, values_{ std::move(values) } {}
 
 
@@ -90,11 +90,10 @@ const std::vector<scoped_ptr<Expr>> &yapvm::ast::Call::args() const {
 }
 
 
-yapvm::ast::Constant::Constant(scoped_ptr<YPrimitiveObject> &&value)
-    :value_{ std::move(value) } {}
+yapvm::ast::Constant::Constant(scoped_ptr<yobjects::YObject> &&value) : value_{std::move(value)} {}
 
 
-const scoped_ptr<YPrimitiveObject> &yapvm::ast::Constant::value() const {
+const scoped_ptr<yobjects::YObject> &yapvm::ast::Constant::value() const {
     return value_;
 }
 

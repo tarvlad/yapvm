@@ -1,213 +1,82 @@
 #pragma once
 
-#include <cstddef>
-#include <cstddef>
-#include <map>
-#include <deque>
-#include <functional>
-
+#include "ast.h"
 #include "kvstorage.h"
 #include "utils.h"
 
+/**
+ * YObject
+ *  YPrimitiveObject
+ *   YIntObject
+ *   YFloatObject
+ *   YStringObject
+ *   YBoolObject
+ *   YNoneObject
+ *  YUserObject
+ *  YListObject
+ *  YTupleObject
+ *  YDictObject
+ *  YIteratorObject
+ *  HASH!!! call to interpreter needed
+ */
 
 #if _MSC_VER
 static_assert(sizeof(void *) == 8); // for MSVC x64 compatibility
 using ssize_t = long long;
 #endif
 
+namespace yapvm::ast {
+class FunctionDef;
+}
 
-namespace yapvm::yobjects {
+namespace yapvm::yobjects {;
 
-class YIterator;
+class ManagedObject;
 
 class YObject {
-protected:
-    bool is_hashable_;
-    bool is_iterable_;
-    bool is_marked_ = false;
+    std::string typename_;
+    KVStorage<std::string, ManagedObject *> fields_;
+    KVStorage<std::string, ast::FunctionDef *> methods_;
 
 public:
-    YObject(bool is_hashable, bool is_iterable);
-    bool is_hashable() const;
-    bool &is_marked();
-    // void mark();
-    virtual YIterator *iter() { return nullptr; };
-    virtual size_t hash() const = 0;
-    virtual bool operator==(const YObject &other) const {return false;};
-    virtual ~YObject() = default;
+    YObject(std::string type_name);
+    ~YObject() = default;
+
+    const std::string &get_typename() const { return typename_; }
+
+    void add_field(std::string name, ManagedObject *field);
+
+    void add_method(std::string name, yapvm::ast::FunctionDef *method);
+
+    ManagedObject *get_field(const std::string &name);
+
+    yapvm::ast::FunctionDef *get_method(const std::string &name);
 };
 
 
-class YHash {
-public:
-    size_t operator()(const YObject &value);
-};
+YObject *constr_yobject(std::string type_name);
+YObject *constr_yint(ssize_t value);
+YObject *constr_yfloat(double value);
+YObject *constr_ystring(std::string value);
+YObject *constr_ybool(bool value);
+YObject *constr_ynone();
+//TODO
 
-class YIterator {
-public:
-    virtual YObject &operator*() = 0;
-    virtual YIterator &operator++() = 0;
-    virtual void next() = 0;
-    virtual bool has_next() = 0;
-    virtual ~YIterator() = default;
-};
-
-class YIteratorCustomClass : public YIterator {
-    std::unordered_map<std::string, YObject*>::iterator begin_;
-    std::unordered_map<std::string, YObject*>::iterator end_;
-
-public: 
-    YIteratorCustomClass(
-        const std::unordered_map<std::string, YObject*>::iterator &begin,
-        const std::unordered_map<std::string, YObject*>::iterator &end
-    );
-    bool has_next() override;
-    YObject &operator*() override;
-    YIterator &operator++() override;
-    void next() override;
-};
-
-class YIteratorList : public YIterator {
-    std::deque<YObject>::iterator begin_;
-    std::deque<YObject>::iterator end_;
-
-public: 
-    YIteratorList(const std::deque<YObject>::iterator &begin, const std::deque<YObject>::iterator &end);
-    bool has_next() override;
-    YObject &operator*() override;
-    YIterator &operator++() override;
-    void next() override;
-};
-
-class YIteratorTuple : public YIterator {
-    std::vector<YObject>::iterator begin_;
-    std::vector<YObject>::iterator end_;
-
-public: 
-    YIteratorTuple(const std::vector<YObject>::iterator &begin, const std::vector<YObject>::iterator &end);
-    bool has_next() override;
-    YObject &operator*() override;
-    YIterator &operator++() override;
-    void next() override;
-};
-
-class YCustomClass : public YObject {
-    std::unordered_map<std::string, YObject*> dict_;
+class ManagedObject {
+    YObject *value_;
+    bool marked_;
 
 public:
-    YCustomClass() : YObject { false, true } {};
-    YCustomClass(const std::unordered_map<std::string, YObject*> &dict);
-    void add(const std::string &key, YObject *val);
-    YIterator *iter() override;
+    ManagedObject(YObject *value);
+
+    YObject *value() const;
+    bool is_marked() const;
+
+    void mark();
+    void unmark();
+    void set_value(YObject *value);
 };
 
 
-class YPrimitiveObject : public YObject {
-public:
-    YPrimitiveObject(bool is_hashable, bool is_iterable) : YObject(is_hashable, is_iterable) {};
 };
-
-class YNoneObject : public YPrimitiveObject {};
-
-class YBoolObject : public YPrimitiveObject {
-    bool value_;
-
-public:
-    YBoolObject(bool value);
-    bool value() const;
-    size_t hash() const override { return (value_) ? 1 : 0;}
-};
-
-class YStringObject : public YPrimitiveObject {
-    std::string value_;
-
-public:
-    YStringObject(const std::string &value);
-    const std::string &value() const;
-    size_t hash() const override { return std::hash<std::string>{}(value_); }
-};
-
-class YFloatObject : public YPrimitiveObject {
-    double value_;
-
-public:
-    YFloatObject(double value);
-    double value() const;
-    size_t hash() const override { return std::hash<double>{}(value_); }
-};
-
-class YIntObject : public YPrimitiveObject {
-    ssize_t value_;
-
-public:
-    YIntObject(ssize_t value);
-    ssize_t value() const;
-    size_t hash() const override { return std::hash<ssize_t>{}(value_); }
-};
-
-
-class YListObject : public YObject {
-    std::deque<YObject> list_;
-
-public:
-    YListObject() : YObject{ false, true }, list_(std::deque<YObject> {}) {};
-
-    YListObject(const std::deque<YObject> &value);
-    YListObject(const std::vector<YObject> &value);
-
-    YListObject(const YListObject &value);
-
-    YListObject &operator=(const YListObject &other);
-
-    YIterator *iter() override;
-
-    std::deque<YObject> &value();
-
-    YObject &operator[](size_t index);
-
-    YListObject operator+(const YListObject &other);
-
-    void append(const YObject &val);
-
-    size_t size() const;
-};
-
-class YTupleObject : public YObject {
-    std::vector<YObject> tuple_;
-
-public:
-    YTupleObject(const std::vector<YObject> &value);
-
-    YTupleObject(const YTupleObject &other);
-    YTupleObject &operator=(const YTupleObject &other);
-
-    YObject &operator[](size_t index);
-
-    YIterator *iter() override;
-
-    size_t size() const;
-    size_t hash();
-};
-
-class YDictObject : public YObject {
-    KVStorage<YObject *, YObject *> dict_;
-
-public:
-    YDictObject() : YObject { false, true } {};
-    /*
-    void add(const YObject &key, int value);
-    
-    YObject &get(const YObject &key);
-    YDictObject(const YTupleObject &other);
-    YDictObject &operator=(const YTupleObject &other);
-
-    const YObject &operator[](YObject *key) const;
-
-    YIterator *iter() const;
-
-    size_t size() const;
-    */
-};
-
-}
 
