@@ -309,11 +309,42 @@ public:
 		return __del(std::move(key));
 	}
 
+
     std::optional<std::reference_wrapper<Value>> operator[](const Key &key) {
         using element_t = std::reference_wrapper<KVStorageElement<Key, Value>>;
         if (std::optional<element_t> kv_element = find(key); kv_element.has_value()) {
             return std::optional{ std::reference_wrapper{ kv_element.value().get().value } };
         }
         return std::nullopt;
+	}
+
+    std::vector<std::pair<Key *, Value *>> get_live_entries() const {
+        std::vector<std::pair<Key *, Value *>> live_entries;
+	    for (size_t i = 0; i < capacity(); i++) {
+	        if (_data[i].exists && !_data[i].deleted) {
+	            live_entries.emplace_back({ &_data[i].key, &_data[i].value });
+	        }
+	    }
+	    return live_entries;
+	}
+
+    std::vector<Key *> get_live_entries_keys() const {
+	    std::vector<Key *> live_entries;
+	    for (size_t i = 0; i < capacity(); i++) {
+	        if (_data[i].exists && !_data[i].deleted) {
+	            live_entries.emplace_back(&_data[i].key);
+	        }
+	    }
+	    return live_entries;
+	}
+
+    std::vector<Value *> get_live_entries_values() const {
+	    std::vector<Value *> live_entries;
+	    for (size_t i = 0; i < capacity(); i++) {
+	        if (_data[i].exists && !_data[i].deleted) {
+	            live_entries.emplace_back(&_data[i].value);
+	        }
+	    }
+	    return live_entries;
 	}
 };

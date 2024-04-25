@@ -29,18 +29,23 @@ namespace yapvm::ast {
 class FunctionDef;
 }
 
-namespace yapvm::yobjects {;
+namespace yapvm::yobjects {
 
 class ManagedObject;
+
 
 class YObject {
     std::string typename_;
     KVStorage<std::string, ManagedObject *> fields_;
     KVStorage<std::string, ast::FunctionDef *> methods_;
+    void *___yapvm_objval_; // reinterpret_cast for usage, yes yes very bad gcc-style type erasure
+                            // chosen for performance
 
 public:
     YObject(std::string type_name);
-    ~YObject() = default;
+    YObject(std::string type_name, void *value);
+
+    ~YObject();
 
     const std::string &get_typename() const { return typename_; }
 
@@ -50,7 +55,15 @@ public:
 
     ManagedObject *get_field(const std::string &name);
 
-    yapvm::ast::FunctionDef *get_method(const std::string &name);
+    ast::FunctionDef *get_method(const std::string &name);
+
+    std::vector<std::string *> get_methods_names() const;
+
+    std::vector<std::string *> get_fields_names() const;
+
+    void *get____yapvm_objval_() const;
+
+    void set____yapvm_objval_(void *value);
 };
 
 
@@ -60,6 +73,8 @@ YObject *constr_yfloat(double value);
 YObject *constr_ystring(std::string value);
 YObject *constr_ybool(bool value);
 YObject *constr_ynone();
+YObject *constr_ylist();
+YObject *constr_ydict();
 //TODO
 
 class ManagedObject {
@@ -68,6 +83,7 @@ class ManagedObject {
 
 public:
     ManagedObject(YObject *value);
+    ~ManagedObject();
 
     YObject *value() const;
     bool is_marked() const;

@@ -301,8 +301,11 @@ yapvm::ast::Module::Module(std::vector<scoped_ptr<Stmt>> &&body)
 
 
 
-const std::vector<scoped_ptr<Stmt>> &yapvm::ast::Module::body() const {
-    return body_;
+const std::vector<scoped_ptr<Stmt>> &yapvm::ast::Module::body() const { return body_; }
+
+
+std::vector<scoped_ptr<Stmt>> &&Module::steal_body() {
+    return std::move(body_);
 }
 
 

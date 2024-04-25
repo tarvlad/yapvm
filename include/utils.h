@@ -1,9 +1,15 @@
 #pragma once
 
-#include <optional>
-#include <string>
-#include <sstream>
 #include <functional>
+#include <optional>
+#include <sstream>
+#include <string>
+
+
+namespace yapvm::ast {
+class Module;
+class FunctionDef;
+}
 
 
 namespace yapvm {
@@ -164,9 +170,9 @@ void assume(bool cond, Callable call_if_error, Args&&... args) {
 
 std::string exec(const std::string &s);
 
-
 std::string trim(const std::string &s);
 
+ast::FunctionDef *generate_function_def(const std::string &src);
 
 std::string extract_delimited_substring(const std::string &str, size_t pos);
 

@@ -215,6 +215,8 @@ public:
     Module(std::vector<scoped_ptr<Stmt>> &&body);
 
     const std::vector<scoped_ptr<Stmt>> &body() const;
+
+    std::vector<scoped_ptr<Stmt>> &&steal_body();
 };
 
 

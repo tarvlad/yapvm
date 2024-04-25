@@ -1,9 +1,13 @@
 #include "utils.h"
-#include <sstream>
-#include <fstream>
 #include <cassert>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+
+#include "parser.h"
+
+
 
 using namespace yapvm;
 
@@ -114,6 +118,13 @@ std::string yapvm::trim(const std::string &s) {
         i--;
     }
     return s.substr(0, i + 1);
+};
+
+
+ast::FunctionDef *yapvm::generate_function_def(const std::string &src) {
+    std::string ast_txt = trim(exec("python " + src));
+    scoped_ptr<ast::Module> module = parser::generate_ast(ast_txt);
+    return checked_cast<ast::Stmt, ast::FunctionDef>(module->steal_body()[0].steal(), std::terminate);
 }
 
 

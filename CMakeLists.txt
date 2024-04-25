@@ -30,8 +30,6 @@ set(SOURCE_ALL
         include/interpreter.h
         src/interpreter.cpp
 
-        test_resources/global_ast_test_data.h
-
         include/allocator.h
         src/allocator.cpp
 

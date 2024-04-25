@@ -723,6 +723,7 @@ scoped_ptr<Expr> generate_call(const std::string &input, size_t &pos) {
 }
 
 
+static
 size_t try_tokenize_int(const std::string &str, size_t cursor_pos) {
     size_t int_len = 0;
     if (str[cursor_pos] == '-') {
@@ -744,6 +745,7 @@ size_t try_tokenize_int(const std::string &str, size_t cursor_pos) {
 }
 
 
+static
 size_t try_tokenize_float(const std::string &str, size_t cursor_pos) {
     size_t float_first_part_len = try_tokenize_int(str, cursor_pos);
     if (float_first_part_len == 0) {
@@ -761,6 +763,18 @@ size_t try_tokenize_float(const std::string &str, size_t cursor_pos) {
 
 
 
+static
+size_t try_tokenize_logic_const(const std::string &str, size_t cursor_pos) {
+    if (sstrcmp(str, "True", cursor_pos)) {
+        return 4;
+    }
+    if (sstrcmp(str, "False", cursor_pos)) {
+        return 5;
+    }
+    return 0;
+}
+
+
 static 
 scoped_ptr<yobjects::YObject> generate_constant_value(const std::string &input, size_t &pos) {
     if (input[pos] == '\'') {
@@ -770,8 +784,7 @@ scoped_ptr<yobjects::YObject> generate_constant_value(const std::string &input, 
         return obj;
     }
 
-    size_t possible_float_len = try_tokenize_float(input, pos);
-    if (possible_float_len != 0) {
+    if (size_t possible_float_len = try_tokenize_float(input, pos); possible_float_len != 0) {
         std::string s_val = input.substr(pos, possible_float_len);
         pos += possible_float_len;
         double val = from_str<double>(s_val);
@@ -779,12 +792,22 @@ scoped_ptr<yobjects::YObject> generate_constant_value(const std::string &input, 
         return obj;
     }
 
-    size_t possible_int_len = try_tokenize_int(input, pos);
-    if (possible_int_len != 0) {
+    if (size_t possible_int_len = try_tokenize_int(input, pos); possible_int_len != 0) {
         std::string s_val = input.substr(pos, possible_int_len);
         pos += possible_int_len;
         ssize_t val = from_str<ssize_t>(s_val);
         scoped_ptr obj = yobjects::constr_yint(val);
+        return obj;
+    }
+
+    if (size_t possible_logic_const_len = try_tokenize_logic_const(input, pos); possible_logic_const_len != 0) {
+        std::string s_val = input.substr(pos, possible_logic_const_len);
+        pos += possible_logic_const_len;
+        bool val = false;
+        if (s_val == "True") {
+            val = true;
+        }
+        scoped_ptr obj = yobjects::constr_ybool(val);
         return obj;
     }
 

@@ -1,6 +1,7 @@
 #include "ast.h"
 #include "parser.h"
 #include "utils.h"
+#include "paths.h"
 #include <gtest/gtest.h>
 
 using namespace yapvm::ast;
@@ -27,11 +28,10 @@ TEST(parser_test, import_gen) {
 
 
 /**
- * def __eq__(self, other):
- *     return type(self) == type(other)
+ * test_resources/none_eq.py
  */
 TEST(parser_test, type_based_eq_gen) {
-    std::string eq_def = trim(exec("python test_resources/none_eq.py"));
+    std::string eq_def = trim("python " + exec(builtin_def_paths::path_def_None___eq___self_other));
     scoped_ptr<Module> module = generate_ast(eq_def);
 
     EXPECT_EQ(module.get()->body().size(), 1);
