@@ -1,7 +1,5 @@
 #include "y_objects.h"
 
-#include <paths.h>
-
 #include "parser.h"
 #include "utils.h"
 
@@ -33,12 +31,12 @@ yapvm::yobjects::YObject::~YObject() {
         return;
     }
     if (typename_ == "list") {
-        std::terminate();
-        // TODO get vector and delete all elements
+        delete static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_);
+        return;
     }
     if (typename_ == "dict") {
-        std::terminate();
-        // TODO get KVStorage and delete all elements
+        delete static_cast<KVStorage<ManagedObject *, ManagedObject *> *>(___yapvm_objval_);
+        return;
     }
 }
 
@@ -123,7 +121,7 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist() {
 
 
 yapvm::yobjects::YObject *yapvm::yobjects::constr_ydict() {
-    return new YObject{ "dict", new std::vector<ManagedObject *>{} };
+    return new YObject{ "dict", new KVStorage<ManagedObject *, ManagedObject *> };
 }
 
 

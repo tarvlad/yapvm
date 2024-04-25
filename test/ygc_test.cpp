@@ -6,7 +6,7 @@ using namespace yapvm;
 using namespace yobjects;
 using namespace ygc;
 
-//TEST(YGCTest, GCMarkAll) {//pizdec...
+//TEST(YGCTest, GCMarkAll) {
 //    YFloatObject fo{3.14};
 //    YIntObject io{23162};
 //    YListObject lo{std::vector<YObject>{YIntObject{1}, YIntObject{2}, YIntObject{3}}};
