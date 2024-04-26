@@ -65,9 +65,21 @@ public:
 
     void set____yapvm_objval_(void *value);
 
-    bool *get_value_bool() const;
+    bool *get_value_as_bool() const;
 
-    // TODO get_value_[all of primitive types] (and set_)
+    std::string *get_value_as_string() const;
+
+    double *get_value_as_float() const;
+
+    ssize_t *get_value_as_int() const;
+
+    void set_value_as_bool(bool value) const;
+
+    void set_value_as_string(std::string value) const;
+
+    void set_value_as_float(double value) const;
+
+    void set_value_as_int(ssize_t value) const;
 };
 
 

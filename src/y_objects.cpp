@@ -2,6 +2,7 @@
 
 #include "parser.h"
 #include "utils.h"
+#include <string>
 
 
 yapvm::yobjects::YObject::YObject(std::string type_name) : typename_{std::move(type_name)}, ___yapvm_objval_{ nullptr } {}
@@ -82,8 +83,36 @@ std::vector<std::string *> yapvm::yobjects::YObject::get_fields_names() const {
 void *yapvm::yobjects::YObject::get____yapvm_objval_() const { return ___yapvm_objval_; }
 
 
-void yapvm::yobjects::YObject::set____yapvm_objval_(void *value) {
-    ___yapvm_objval_ = value;
+void yapvm::yobjects::YObject::set____yapvm_objval_(void *value) { ___yapvm_objval_ = value; }
+
+
+bool *yapvm::yobjects::YObject::get_value_as_bool() const { return static_cast<bool *>(___yapvm_objval_); }
+
+
+std::string *yapvm::yobjects::YObject::get_value_as_string() const {
+    return static_cast<std::string *>(___yapvm_objval_);
+}
+
+
+double *yapvm::yobjects::YObject::get_value_as_float() const { return static_cast<double *>(___yapvm_objval_); }
+
+
+ssize_t *yapvm::yobjects::YObject::get_value_as_int() const { return static_cast<ssize_t *>(___yapvm_objval_); }
+
+
+void yapvm::yobjects::YObject::set_value_as_bool(bool value) const { *static_cast<bool *>(___yapvm_objval_) = value; }
+
+
+void yapvm::yobjects::YObject::set_value_as_string(std::string value) const {
+    *static_cast<std::string *>(___yapvm_objval_) = std::move(value);
+}
+
+void yapvm::yobjects::YObject::set_value_as_float(double value) const {
+    *static_cast<double *>(___yapvm_objval_) = value;
+}
+
+void yapvm::yobjects::YObject::set_value_as_int(ssize_t value) const {
+    *static_cast<ssize_t *>(___yapvm_objval_) = value;
 }
 
 
@@ -121,7 +150,19 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist() {
 
 
 yapvm::yobjects::YObject *yapvm::yobjects::constr_ydict() {
-    return new YObject{ "dict", new KVStorage<ManagedObject *, ManagedObject *> };
+    return new YObject{
+        "dict",
+        new KVStorage<
+            ManagedObject *,
+            ManagedObject *,
+            70, 30,
+            struct __yobj_hash {
+                size_t operator()(ManagedObject *o) const {
+                    return managed_yobject_hash(o);
+                }
+            }
+        >
+    };
 }
 
 
@@ -146,3 +187,30 @@ void yapvm::yobjects::ManagedObject::unmark() { marked_ = false; }
 
 
 void yapvm::yobjects::ManagedObject::set_value(YObject *value) { value_ = value; }
+
+
+size_t yapvm::yobjects::managed_yobject_hash(ManagedObject *o) {
+    YObject *value = o->value();
+    assert(value != nullptr);
+
+    const std::string &typename_ = value->get_typename();
+
+    if (typename_ == "None") {
+        return 0;
+    }
+    if (typename_ == "bool") {
+        return std::hash<bool>{}(*value->get_value_as_bool());
+    }
+    if (typename_ == "string") {
+        return std::hash<std::string>{}(*value->get_value_as_string());
+    }
+    if (typename_ == "float") {
+        return std::hash<double>{}(*value->get_value_as_float());
+    }
+    if (typename_ == "int") {
+        return std::hash<ssize_t>{}(*value->get_value_as_int());
+    }
+    //TODO tuples? when added
+
+    return std::hash<size_t>{}(reinterpret_cast<size_t>(o));
+}
