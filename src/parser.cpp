@@ -142,9 +142,18 @@ static scoped_ptr<Stmt> generate_function_def(const std::string &input, size_t &
 
     std::vector<scoped_ptr<Stmt>> body = generate_stmt_vec(input, pos);
 
-    assume(sstrcmp(input, ", decorator_list=[], type_params=[])", pos), parse_error, pos, __FILE__, std::to_string(__LINE__));
-    pos += sizeof(", decorator_list=[], type_params=[])") - 1;
+    bool before_py_3_12_input_matched = sstrcmp(input, ", decorator_list=[])", pos);
+    bool after_py_3_12_input_mathed = sstrcmp(input, ", decorator_list=[], type_params=[])", pos);
+    assume(
+        before_py_3_12_input_matched || after_py_3_12_input_mathed,
+        parse_error, pos, __FILE__, std::to_string(__LINE__)
+    );
 
+    if (before_py_3_12_input_matched) {
+        pos += sizeof(", decorator_list=[])") - 1;
+    } else {
+        pos += sizeof(", decorator_list=[], type_params=[])") - 1;
+    }
     return new FunctionDef{ std::move(name), std::move(args), std::move(body) };
 }
 

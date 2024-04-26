@@ -31,7 +31,7 @@ TEST(parser_test, import_gen) {
  * test_resources/none_eq.py
  */
 TEST(parser_test, type_based_eq_gen) {
-    std::string eq_def = trim("python " + exec(builtin_def_paths::path_def_None___eq___self_other));
+    std::string eq_def = trim(exec("python " + std::string(builtin_def_paths::path_def_None___eq___self_other)));
     scoped_ptr<Module> module = generate_ast(eq_def);
 
     EXPECT_EQ(module.get()->body().size(), 1);
