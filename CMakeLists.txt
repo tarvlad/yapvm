@@ -35,6 +35,8 @@ set(SOURCE_ALL
 
         include/kvstorage.h
         include/kvstorage_element.h
+
+        include/scope.h
 )
 
 

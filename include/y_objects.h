@@ -64,6 +64,10 @@ public:
     void *get____yapvm_objval_() const;
 
     void set____yapvm_objval_(void *value);
+
+    bool *get_value_bool() const;
+
+    // TODO get_value_[all of primitive types] (and set_)
 };
 
 
@@ -92,6 +96,9 @@ public:
     void unmark();
     void set_value(YObject *value);
 };
+
+
+size_t managed_yobject_hash(ManagedObject *o);
 
 
 };

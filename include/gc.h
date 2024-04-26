@@ -6,6 +6,11 @@
 #include <vector>
 
 
+// TODO need to register all ManagedObject allocations
+// TODO Only GC can clean ManagedObject
+// TODO add function ManagedObject *constr(YObject *value) function to GC, which only can be used
+// TODO for create ManagedObject-s. After this, owner of value is constructed ManagedObject
+
 namespace yapvm::ygc {
 
 using namespace yapvm::yobjects;
