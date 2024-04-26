@@ -37,6 +37,7 @@ set(SOURCE_ALL
         include/kvstorage_element.h
 
         include/scope.h
+        src/scope.cpp
 )
 
 
@@ -76,6 +77,10 @@ add_executable(kv_storage_test
         ${SOURCE_ALL}
 )
 
+add_executable(scope_test
+        test/scope_test.cpp
+        ${SOURCE_ALL}
+)
 
 target_link_libraries(
         y_object_test
@@ -97,6 +102,10 @@ target_link_libraries(
         GTest::gtest_main
 )
 
+target_link_libraries(
+        scope_test
+        GTest::gtest_main
+)
 
 include(GoogleTest)
 gtest_discover_tests(y_object_test)
