@@ -149,6 +149,13 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist() {
 }
 
 
+struct __yobj_hash {
+    size_t operator()(yapvm::yobjects::ManagedObject *o) const {
+        return yapvm::yobjects::managed_yobject_hash(o);
+    }
+};
+
+
 yapvm::yobjects::YObject *yapvm::yobjects::constr_ydict() {
     return new YObject{
         "dict",
@@ -156,11 +163,7 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ydict() {
             ManagedObject *,
             ManagedObject *,
             70, 30,
-            struct __yobj_hash {
-                size_t operator()(ManagedObject *o) const {
-                    return managed_yobject_hash(o);
-                }
-            }
+            __yobj_hash
         >
     };
 }
