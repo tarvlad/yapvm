@@ -22,8 +22,8 @@ TEST(ScopedTest, add_object_test) {
     scope.add_object("x", m_int);
     scope.add_object("Greeter", obj);
 
-    auto obj_x = *(scope.get_object("x"));
-    auto obj_greeter = *(scope.get_object("Greeter"));
-    EXPECT_EQ(42, *static_cast<ssize_t *>(obj_x->value()->get____yapvm_objval_()));
-    EXPECT_EQ("Greeter", obj_greeter->value()->get_typename());
+    // auto obj_x = *(scope.get_object("x"));
+    // auto obj_greeter = *(scope.get_object("Greeter"));
+    EXPECT_EQ(42, *static_cast<ssize_t *>(scope.get_object("x")->value()->get____yapvm_objval_()));
+    EXPECT_EQ("Greeter", scope.get_object("Greeter")->value()->get_typename());
 }
