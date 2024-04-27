@@ -54,6 +54,8 @@ TEST(scope_test, add_function) {
     // I dunno if this a good idea to check signature
     scope.add_function("foo", foo);
     EXPECT_TRUE(nullptr != scope.get_function("foo"));
+    scope.change("foo", ScopeEntry{ nullptr, OBJECT });
+    EXPECT_TRUE(scope.get("foo").value().type_ == OBJECT && scope.get("foo").value().value_ == nullptr);
 }
 
 TEST(scope_test, subscopes) {

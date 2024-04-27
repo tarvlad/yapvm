@@ -24,25 +24,29 @@ struct ScopeEntry {
 };
 
 
-// Scope can't manage FunctionDef and ManagedObject lifetimes; Deligate to gc
+// Scope can't manage FunctionDef and ManagedObject lifetimes; Delegate to gc
 // copy constructor IF NEEDED
 class Scope {
     Scope* parent_;
     KVStorage<std::string, ScopeEntry> scope_;
-public:
 
-    Scope() : parent_(nullptr) {};
+public:
+    constexpr static const char *lst_exec_res = "__yapvm_inner_last_exec_res";
+
+    Scope();
     Scope(Scope* parent) : parent_(parent) {};
 
-    const bool add_object(std::string name, ManagedObject *value);
-    const bool add_function(std::string signature, FunctionDef *function);
-    const bool add_child_scope(std::string name, Scope* subscope);
-    const bool add(std::string name, ScopeEntry entry);
+    bool add_object(std::string name, ManagedObject *value);
+    bool add_function(std::string signature, FunctionDef *function);
+    bool add_child_scope(std::string name, Scope *subscope);
+    bool add(std::string name, ScopeEntry entry);
+
+    void change(const std::string &name, ScopeEntry new_entry);
 
     ManagedObject *get_object(const std::string &name);
     FunctionDef *get_function(const std::string &signature);
     std::optional<ScopeEntry> get(const std::string &name);
-    std::vector<Scope *> get_all_children();
+    std::vector<Scope *> get_all_children() const;
     Scope* parent() const;
 };
 

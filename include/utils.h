@@ -178,4 +178,11 @@ std::string extract_delimited_substring(const std::string &str, size_t pos);
 
 size_t combine_hashes(size_t h1, size_t h2);
 
+
+template <typename T, typename W>
+bool instanceof(W *value) {
+    return dynamic_cast<T *>(value) != nullptr;
+}
+
+
 }
