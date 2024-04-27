@@ -42,6 +42,7 @@ public:
     bool add(std::string name, ScopeEntry entry);
 
     void change(const std::string &name, ScopeEntry new_entry);
+    void store_last_exec_res(const std::string &name);
 
     ManagedObject *get_object(const std::string &name);
     FunctionDef *get_function(const std::string &signature);

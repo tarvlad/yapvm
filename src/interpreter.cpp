@@ -60,7 +60,14 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     }
     if (instanceof<Assign>(code)) {
         Assign *assign = dynamic_cast<Assign *>(code);
-        //TODO
+        if (assign->target().size() != 1 || !instanceof<Name>(assign->target()[0].get())) {
+            throw std::runtime_error("Interpreter: currently can assign only to single Name");
+        }
+        Name *target = dynamic_cast<Name *>(assign->target()[0].get());
+        assert(target != nullptr);
+        interpret_expr(assign->value());
+        scope_->store_last_exec_res(target->id());
+        return;
     }
     //TODO
 }
@@ -70,6 +77,7 @@ void yapvm::interpreter::Interpreter::interpret(Node *code) {
     assert(code != nullptr);
     if (instanceof<Stmt>(code)) {
         interpret_stmt(dynamic_cast<Stmt *>(code));
+        //TODO check and park???
         if (finishing_.load()) {
             return;
         }

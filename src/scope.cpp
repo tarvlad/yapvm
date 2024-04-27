@@ -38,6 +38,10 @@ void Scope::change(const std::string &name, ScopeEntry new_entry) {
     entry = new_entry;
 }
 
+void Scope::store_last_exec_res(const std::string &name) {
+    change(name, get(lst_exec_res).value());
+}
+
 
 ManagedObject *Scope::get_object(const std::string &name) {
     std::optional<std::reference_wrapper<ScopeEntry>> opt_from_kv = scope_[name];
