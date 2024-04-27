@@ -5,11 +5,12 @@
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
     while (!resuming_.load()) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds{100});
+        std::this_thread::sleep_for(std::chrono::nanoseconds{500});
     }
 
     for (const scoped_ptr<Stmt> &i: code->body()) {
         interpret(i);
+        //TODO check and park (handle unpark too)
         if (finishing_.load()) {
             break;
         }
@@ -77,11 +78,9 @@ void yapvm::interpreter::Interpreter::interpret(Node *code) {
     assert(code != nullptr);
     if (instanceof<Stmt>(code)) {
         interpret_stmt(dynamic_cast<Stmt *>(code));
-        //TODO check and park???
-        if (finishing_.load()) {
-            return;
-        }
+        return;
     }
+    throw std::runtime_error("Interpreter: interpret() can deal only with Stmt-s");
 }
 
 
