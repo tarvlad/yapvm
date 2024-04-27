@@ -37,6 +37,8 @@ set(SOURCE_ALL
         include/kvstorage_element.h
 
         include/scope.h
+
+        include/thread_manager.h
 )
 
 
