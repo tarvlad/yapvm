@@ -60,7 +60,7 @@ TEST(y_object_test, y_custom_test) {
             parser::generate_ast(trim(exec(
                 "python "
                 + std::string(builtin_def_paths::path_def_type_and_val_based___eq___self_other)
-            )))->steal_body()[0].get(), std::terminate
+            )))->steal_body()[0].steal(), std::terminate
     );
     obj->add_method(
         "__eq__",
