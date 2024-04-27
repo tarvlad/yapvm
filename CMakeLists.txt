@@ -38,6 +38,8 @@ set(SOURCE_ALL
 
         include/scope.h
         src/scope.cpp
+
+        include/thread_manager.h
 )
 
 
