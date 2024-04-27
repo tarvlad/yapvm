@@ -11,6 +11,7 @@ const bool Scope::add_function(std::string signature, FunctionDef *function) {
 }
 
 const bool Scope::add_child_scope(std::string name, Scope* subscope) {
+    subscope->parent_ = this;
     return scope_.add(name, ScopeEntry{static_cast<void *>(subscope), SCOPE}); 
 }
 
@@ -46,4 +47,8 @@ std::vector<Scope *> Scope::get_all_children() {
         if (f->type_ == SCOPE) children.push_back(static_cast<Scope *>(f->value_));
     }
     return children;
+}
+
+Scope* Scope::parent() const {
+    return parent_;
 }
