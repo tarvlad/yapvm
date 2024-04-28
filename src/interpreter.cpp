@@ -46,15 +46,16 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 throw std::runtime_error("Interpreter: BoolOp args should be bools in end of evaluation");
             }
             if (dynamic_cast<And *>(bool_op->op().get()) != nullptr) {
-                result = result && *call_res->get_value_as_bool();
+                result = result && call_res->get_value_as_bool();
             } else {
-                result = result || *call_res->get_value_as_bool();
+                result = result || call_res->get_value_as_bool();
             }
         }
 
         ManagedObject *resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } }};
         register_queue_.push(resobj);
         scope_->update_last_exec_res(resobj);
+        return;
     }
     if (instanceof<BinOp>(code)) {
         BinOp *bin_op = dynamic_cast<BinOp *>(code);
@@ -69,7 +70,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         }
 
         BinOpKind *op_kind = bin_op->op();
-        ManagedObject *resobj;
+        ManagedObject *resobj = nullptr;
         if (instanceof<Add>(op_kind)) {
             if (left->get_typename() == "bool") {
                 ssize_t res = 0;
@@ -79,9 +80,23 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 if (right->get_value_as_bool()) {
                     res++;
                 }
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res += right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_value_as_float()) {
+                double res = 0;
+                res += left->get_value_as_float();
 
             }
         }
+        if (resobj == nullptr) {
+            throw std::runtime_error("Interpreter: unexpected BinaryOperatorKind");
+        }
+        register_queue_.push(resobj);
+        scope_->update_last_exec_res(resobj);
     }
 }
 

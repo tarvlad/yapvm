@@ -65,13 +65,13 @@ public:
 
     void set____yapvm_objval_(void *value);
 
-    bool *get_value_as_bool() const;
+    bool get_value_as_bool() const;
 
-    std::string *get_value_as_string() const;
+    std::string get_value_as_string() const;
 
-    double *get_value_as_float() const;
+    double get_value_as_float() const;
 
-    ssize_t *get_value_as_int() const;
+    ssize_t get_value_as_int() const;
 
     void set_value_as_bool(bool value) const;
 
