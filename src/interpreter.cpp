@@ -26,7 +26,11 @@ void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
 
 // TODO all variables accesses should be uprising lookups
 void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
-    std::terminate(); //TODO after every expr exec change lst_expr_res ???
+    //TODO after every expr exec change lst_expr_res
+    if (instanceof<BoolOp>(code)) {
+        BoolOp *bool_op = dynamic_cast<BoolOp *>(code);
+
+    }
 }
 
 
@@ -125,8 +129,8 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
         }
         return;
     }
-    if (instanceof<Expr>(code)) {
-        interpret_expr(dynamic_cast<Expr *>(code));
+    if (instanceof<ExprStmt>(code)) {
+        interpret_expr(dynamic_cast<ExprStmt *>(code)->value());
     }
     if (instanceof<Pass>(code)) {
         return; // just skip pass instr
