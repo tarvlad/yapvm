@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include <chrono>
 
+//TODO rewrite as Scope method
 #define LAST_EXEC_RES_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value()
 
 // SHOULD be called only once when interpreter starts
@@ -51,6 +52,36 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             }
         }
 
+        ManagedObject *resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } }};
+        register_queue_.push(resobj);
+        scope_->update_last_exec_res(resobj);
+    }
+    if (instanceof<BinOp>(code)) {
+        BinOp *bin_op = dynamic_cast<BinOp *>(code);
+        interpret_expr(bin_op->left());
+        // we have guarantees that GC will not happen here because it can happen only after single statement execution
+        YObject *left = LAST_EXEC_RES_YOBJ;
+        interpret_expr(bin_op->right());
+        YObject *right = LAST_EXEC_RES_YOBJ;
+
+        if (left->get_typename() != right->get_typename()) {
+            throw std::runtime_error("Interpreter: BinOp operands currently need to be same type");
+        }
+
+        BinOpKind *op_kind = bin_op->op();
+        ManagedObject *resobj;
+        if (instanceof<Add>(op_kind)) {
+            if (left->get_typename() == "bool") {
+                ssize_t res = 0;
+                if (left->get_value_as_bool()) {
+                    res++;
+                }
+                if (right->get_value_as_bool()) {
+                    res++;
+                }
+
+            }
+        }
     }
 }
 
@@ -175,7 +206,7 @@ void yapvm::interpreter::Interpreter::interpret(Node *code) {
 
 
 yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code)
-    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{__worker_exec, this, code_} {
+    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{&Interpreter::__worker_exec, this, code_} {
     main_scope_->add(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
 }
 

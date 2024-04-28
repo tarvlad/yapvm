@@ -47,6 +47,7 @@ public:
 
     void change(const std::string &name, ScopeEntry new_entry);
     void store_last_exec_res(const std::string &name);
+    void update_last_exec_res(ManagedObject *value);
 
     ScopeEntry name_lookup(const std::string &name);
 

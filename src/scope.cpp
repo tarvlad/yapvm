@@ -40,6 +40,10 @@ void Scope::change(const std::string &name, ScopeEntry new_entry) {
 
 void Scope::store_last_exec_res(const std::string &name) { change(name, get(lst_exec_res).value()); }
 
+void Scope::update_last_exec_res(ManagedObject *value) {
+    change(Scope::lst_exec_res, ScopeEntry{ value, OBJECT });
+}
+
 
 ScopeEntry Scope::name_lookup(const std::string &name) {
     Scope *checkee = this;
