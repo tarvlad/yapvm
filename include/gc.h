@@ -27,9 +27,9 @@ public:
         collect();
     };
 private:
-    void mark() const;
-    void sweep() const;
-    void collect() const;
+    void mark();
+    void sweep();
+    void collect();
 };
 
 

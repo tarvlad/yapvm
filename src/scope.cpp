@@ -85,6 +85,21 @@ std::vector<Scope *> Scope::get_all_children() const {
     return children;
 }
 
+std::vector<ManagedObject *> yapvm::interpreter::Scope::get_all_objects() const {
+    std::vector<ScopeEntry*> values = scope_.get_live_values();
+    std::vector<ManagedObject*> res;
+    for (auto se : values) {
+        if (se->value_ == nullptr) continue;
+
+        if (se->type_ == OBJECT) {
+            res.push_back(static_cast<ManagedObject*>(se->value_));
+        } else if (se->type_ == SCOPE) { 
+            res.append_range((static_cast<Scope*>(se->value_))->get_all_objects());
+        }
+    } 
+    return res;
+}
+
 Scope* Scope::parent() const {
     return parent_;
 }

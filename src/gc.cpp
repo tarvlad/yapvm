@@ -8,59 +8,57 @@
 
 using namespace yapvm::ygc;
 
-// void YGC::mark() const {
-//     std::deque<YObject*> deq;
-//    for (const auto &[key, val] : root_->scope_) {
-//        val->is_marked() = true;
-//        deq.push_back(val);
-//    }
+void YGC::mark() {
+    std::deque<ManagedObject*> deq;
+    // all root objects, no nullptr's here 
+    std::vector<ManagedObject*> root_objects = root_->get_all_objects();
+    for (ManagedObject* obj : root_objects) {
+        obj->mark();
+        deq.push_back(obj);
+    }
 
-//    while (!deq.empty()) {
-//        YObject *curr_obj = deq.front();
-//        deq.pop_front();
-//        YIterator *it = curr_obj->iter();
-//        if (!it) continue;
-//        while (it->has_next()) {
-//            YObject &child = *(*it);
-//            if (!child.is_marked()) {
-//                child.is_marked() = true;
-//                deq.push_back(&child);
-//            }
-//            it->next();
-//        }
-//        delete it;
-//    }
-// }
+    while (!deq.empty()) {
+        ManagedObject *curr_obj = deq.front();
+        deq.pop_front();
+        std::vector<ManagedObject *> kids = curr_obj->value()->get_fields();
+        if (kids.empty()) continue;
+        for (ManagedObject *kid : kids) {
+            if (!kid->is_marked()) {
+                kid->mark();
+                deq.push_back(kid);
+            }
+        }
+    }
+}
 
-//
-//void YGC::sweep() const {
-//    for (auto obj : heap_->objs_) {
-//        if (!obj->is_marked()) {
-//            delete(obj);
-//        } else {
-//            obj->is_marked() = false;
-//        }
-//    }
-//}
-//
-// [v1 v2 v3] [v1 v3]
-// [v1 v3] []
 
-void YGC::collect() const {
+void YGC::sweep() {
+    for (ManagedObject *obj : left_) {
+        if (!obj->is_marked()) {
+            delete(obj);
+        } else {
+            right_.push_back(obj);
+        }
+    }
+    left_.swap(right_);
+    right_.clear();
+}
+
+void YGC::collect() {
     while (true) {
         tm_.park_all();
         while (!tm_.is_all_parked()) {
             sleepns(500);
         }
 
-        std::vector<Interpreter *> interprets = tm.get_all_interpreters();
+        std::vector<Interpreter *> interprets = tm_.get_all_interpreters();
 
-        if (interpreters.size() == 0) {
+        if (interprets.size() == 0) {
             tm_.run_all();
             break;
         }
 
-        for (Interpreter * i : interpreters) {
+        for (Interpreter * i : interprets) {
             left_.append_range(i->get_register_queue());
         }
         

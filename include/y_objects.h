@@ -61,6 +61,8 @@ public:
 
     std::vector<std::string *> get_fields_names() const;
 
+    std::vector<ManagedObject *> get_fields();
+
     void *get____yapvm_objval_() const;
 
     void set____yapvm_objval_(void *value);

@@ -79,6 +79,14 @@ std::vector<std::string *> yapvm::yobjects::YObject::get_fields_names() const {
     return fields_.get_live_entries_keys();
 }
 
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::YObject::get_fields() {
+    std::vector<ManagedObject *> res;
+    std::vector<std::string *> names = get_fields_names();
+    for (std::string *name : names) {
+        res.push_back(get_field(*name));
+    }
+    return res;
+}
 
 void *yapvm::yobjects::YObject::get____yapvm_objval_() const { return ___yapvm_objval_; }
 
