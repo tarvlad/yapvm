@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include <chrono>
 
+#define LAST_EXEC_RES_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value()
 
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
@@ -29,6 +30,26 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
     //TODO after every expr exec change lst_expr_res
     if (instanceof<BoolOp>(code)) {
         BoolOp *bool_op = dynamic_cast<BoolOp *>(code);
+        interpret_expr(bool_op->values()[0]);
+
+        YObject *first_call_res = LAST_EXEC_RES_YOBJ;
+        if (first_call_res->get_typename() != "bool") {
+            throw std::runtime_error("Interpreter: BoolOp args should be bools in end of evaluation");
+        }
+        bool result = first_call_res->get_value_as_bool();
+
+        for (size_t i = 1; i < bool_op->values().size(); i++) {
+            interpret_expr(bool_op->values()[i]);
+            YObject *call_res = LAST_EXEC_RES_YOBJ;
+            if (call_res->get_typename() != "bool") {
+                throw std::runtime_error("Interpreter: BoolOp args should be bools in end of evaluation");
+            }
+            if (dynamic_cast<And *>(bool_op->op().get()) != nullptr) {
+                result = result && *call_res->get_value_as_bool();
+            } else {
+                result = result || *call_res->get_value_as_bool();
+            }
+        }
 
     }
 }
@@ -89,7 +110,7 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
 
         while (true) {
             interpret_expr(while_->test());
-            YObject *test_res = static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value();
+            YObject *test_res = LAST_EXEC_RES_YOBJ;
             if (test_res->get_typename() != "bool") {
                 throw std::runtime_error("Interpreter: While.test expression should be bool");
             }
@@ -114,7 +135,7 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
         scope_ = static_cast<Scope *>(scope_->get(Scope::if_scope).value().value_);
 
         interpret_expr(if_->test());
-        YObject *test_res = static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value();
+        YObject *test_res = LAST_EXEC_RES_YOBJ;
         if (test_res->get_typename() != "bool") {
             throw std::runtime_error("Interpreter: If.test expression should be bool");
         }
