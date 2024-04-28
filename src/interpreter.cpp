@@ -293,10 +293,125 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         if (compare->comparators().size() != 1) {
             throw std::runtime_error("Interpreter: Compare currently supported only with one argument");
         }
+        interpret_expr(compare->left());
+        YObject *left = LAST_EXEC_RES_YOBJ;
         CmpOpKind *op = compare->ops()[0];
         interpret_expr(compare->comparators()[0]);
-        YObject *comparator = LAST_EXEC_RES_YOBJ;
-        //TODO
+        YObject *right = LAST_EXEC_RES_YOBJ;
+
+        if (left->get_typename() != right->get_typename()) {
+            ManagedObject *resobj = new ManagedObject{ new YObject{ "bool", new bool{ false } } };
+            scope_->update_last_exec_res(resobj);
+            return;
+        }
+
+        // TODO special handle for lists, dicts???
+        ManagedObject *resobj = nullptr;
+        if (instanceof<Eq>(op)) {
+            if (left->get_typename() == "bool") {
+                bool result = left->get_value_as_bool() == right->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "int") {
+                bool result = left->get_value_as_int() == right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "float") {
+                bool result = left->get_value_as_float() == right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "string") {
+                bool result = left->get_value_as_string() == right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else {
+                bool result = left == right;
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            }
+        } else if (instanceof<NotEq>(op)) {
+            if (left->get_typename() == "bool") {
+                bool result = left->get_value_as_bool() != right->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "int") {
+                bool result = left->get_value_as_int() != right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "float") {
+                bool result = left->get_value_as_float() != right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "string") {
+                bool result = left->get_value_as_string() != right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else {
+                bool result = left != right;
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            }
+        } else if (instanceof<Lt>(op)) {
+            if (left->get_typename() == "bool") {
+                bool result = left->get_value_as_bool() < right->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "int") {
+                bool result = left->get_value_as_int() < right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "float") {
+                bool result = left->get_value_as_float() < right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "string") {
+                bool result = left->get_value_as_string() < right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else { // TODO
+                throw std::runtime_error("Interpreter: Lt not supported for " + left->get_typename());
+            }
+        } else if (instanceof<LtE>(op)) {
+            if (left->get_typename() == "bool") {
+                bool result = left->get_value_as_bool() <= right->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "int") {
+                bool result = left->get_value_as_int() <= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "float") {
+                bool result = left->get_value_as_float() <= right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "string") {
+                bool result = left->get_value_as_string() <= right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else { // TODO
+                throw std::runtime_error("Interpreter: LtE not supported for " + left->get_typename());
+            }
+        } else if (instanceof<Gt>(op)) {
+            if (left->get_typename() == "bool") {
+                bool result = left->get_value_as_bool() > right->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "int") {
+                bool result = left->get_value_as_int() > right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "float") {
+                bool result = left->get_value_as_float() > right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "string") {
+                bool result = left->get_value_as_string() > right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else { // TODO
+                throw std::runtime_error("Interpreter: Gt not supported for " + left->get_typename());
+            }
+        } else if (instanceof<GtE>(op)) {
+            if (left->get_typename() == "bool") {
+                bool result = left->get_value_as_bool() >= right->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "int") {
+                bool result = left->get_value_as_int() >= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "float") {
+                bool result = left->get_value_as_float() >= right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else if (left->get_typename() == "string") {
+                bool result = left->get_value_as_string() >= right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ result } } };
+            } else { // TODO
+                throw std::runtime_error("Interpreter: Gt not supported for " + left->get_typename());
+            }
+        }
+        if (resobj == nullptr) {
+            throw std::runtime_error("Interpteter: unexpected CmpOpKind");
+        }
+        register_queue_.push(resobj);
+        scope_->update_last_exec_res(resobj);
+        return;
     }
 
     throw std::runtime_error("Interpreter: unexpected expression");
