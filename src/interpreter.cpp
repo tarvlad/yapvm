@@ -1,7 +1,9 @@
 #include "interpreter.h"
 #include <chrono>
+#include <cmath>
 
-//TODO rewrite as Scope method
+
+// TODO rewrite as Scope method
 #define LAST_EXEC_RES_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value()
 
 // SHOULD be called only once when interpreter starts
@@ -86,10 +88,164 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 res += left->get_value_as_int();
                 res += right->get_value_as_int();
                 resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
-            } else if (left->get_value_as_float()) {
+            } else if (left->get_typename() == "float") {
                 double res = 0;
                 res += left->get_value_as_float();
-
+                res += right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else if (left->get_typename() == "string") {
+                std::string res;
+                res += left->get_value_as_string();
+                res += right->get_value_as_string();
+                resobj = new ManagedObject{ new YObject{ "string", new std::string{ std::move(res) } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: Add not supported for " + left->get_typename());
+            }
+        } else if (instanceof<Sub>(op_kind)) {
+            if (left->get_typename() == "bool") {
+                ssize_t res = 0;
+                if (left->get_value_as_bool()) {
+                    res++;
+                }
+                if (right->get_value_as_bool()) {
+                    res--;
+                }
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res -= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "float") {
+                double res = 0;
+                res += left->get_value_as_float();
+                res -= right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: Sub not supported for " + left->get_typename());
+            }
+        } else if (instanceof<Mult>(op_kind)) {
+            if (left->get_typename() == "bool") {
+                ssize_t res = 0;
+                if (left->get_value_as_bool() && right->get_value_as_bool()) {
+                    res = 1;
+                }
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res *= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "float") {
+                double res = 0;
+                res += left->get_value_as_float();
+                res *= right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: Mult not supported for " + left->get_typename());
+            }
+        } else if (instanceof<Div>(op_kind)) {
+            if (left->get_typename() == "int") {
+                double res = 0;
+                res += static_cast<double>(left->get_value_as_int());
+                res /= static_cast<double>(right->get_value_as_int());
+                resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else if (left->get_typename() == "float") {
+                double res = 0;
+                res += left->get_value_as_float();
+                res /= right->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: Div not supported for " + left->get_typename());
+            }
+        } else if (instanceof<Mod>(op_kind)) {
+            if (left->get_typename() == "bool") {
+                ssize_t res = 0;
+                if (left->get_value_as_bool() && right->get_value_as_bool()) {
+                    res = 1;
+                }
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res %= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: Mod not supported for " + left->get_typename());
+            }
+        } else if (instanceof<Pow>(op_kind)) {
+            if (left->get_typename() == "bool") {
+                ssize_t res = 0;
+                if (left->get_value_as_bool() && right->get_value_as_bool()) {
+                    res = 1;
+                }
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res = static_cast<ssize_t>(std::pow(res, right->get_value_as_int()));
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else if (left->get_typename() == "float") {
+                double res = 0;
+                res += left->get_value_as_float();
+                res = std::pow(res, right->get_value_as_float());
+                resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: Pow not supported for " + left->get_typename());
+            }
+        } else if (instanceof<LShift>(op_kind)) {
+            if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res <<= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: LShift not supported for " + left->get_typename());
+            }
+        } else if (instanceof<RShift>(op_kind)) {
+            if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res >>= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: RShift not supported for " + left->get_typename());
+            }
+        } else if (instanceof<BitOr>(op_kind)) {
+            if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res |= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: BitOr not supported for " + left->get_typename());
+            }
+        } else if (instanceof<BitXor>(op_kind)) {
+            if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res ^= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: BitXor not supported for " + left->get_typename());
+            }
+        } else if (instanceof<BitAnd>(op_kind)) {
+            if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res &= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: BitAnd not supported for " + left->get_typename());
+            }
+        } else if (instanceof<FloorDiv>(op_kind)) {
+            if (left->get_typename() == "int") {
+                ssize_t res = 0;
+                res += left->get_value_as_int();
+                res /= right->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ res } } };
+            } else { //TODO
+                throw std::runtime_error("Interpreter: BitAnd not supported for " + left->get_typename());
             }
         }
         if (resobj == nullptr) {
@@ -97,7 +253,9 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         }
         register_queue_.push(resobj);
         scope_->update_last_exec_res(resobj);
+        return;
     }
+    //TODO
 }
 
 
