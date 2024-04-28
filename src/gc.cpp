@@ -9,10 +9,10 @@
 using namespace yapvm::ygc;
 
 void YGC::mark() {
-    std::deque<ManagedObject*> deq;
+    std::deque<ManagedObject *> deq;
     // all root objects, no nullptr's here 
-    std::vector<ManagedObject*> root_objects = root_->get_all_objects();
-    for (ManagedObject* obj : root_objects) {
+    std::vector<ManagedObject *> root_objects = root_->get_all_objects();
+    for (ManagedObject *obj : root_objects) {
         obj->mark();
         deq.push_back(obj);
     }
@@ -46,28 +46,28 @@ void YGC::sweep() {
 
 void YGC::collect() {
     while (true) {
-        tm_.park_all();
-        while (!tm_.is_all_parked()) {
-            sleepns(500);
-        }
+        // tm_.park_all();
+        // while (!tm_.is_all_parked()) {
+        //     sleepns(500);
+        // }
 
-        std::vector<Interpreter *> interprets = tm_.get_all_interpreters();
+        // std::vector<Interpreter *> interprets = tm_.get_all_interpreters();
 
-        if (interprets.size() == 0) {
-            tm_.run_all();
-            break;
-        }
+        // if (interprets.size() == 0) {
+        //     // tm_.run_all();
+        //     break;
+        // }
 
-        for (Interpreter * i : interprets) {
-            left_.append_range(i->get_register_queue());
-        }
+        // for (Interpreter * i : interprets) {
+        //     // left_.append_range(i->get_register_queue());
+        // }
         
         if (left_.size() >= GC_CASH_LIMIT) {
             mark();
             sweep();
         }
         
-        tm_.run_all();
+        // tm_.run_all();
 
         sleepms(500);
     }

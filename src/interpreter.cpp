@@ -175,7 +175,7 @@ void yapvm::interpreter::Interpreter::interpret(Node *code) {
 
 
 yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code)
-    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{__worker_exec, this, code_} {
+    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{&Interpreter::__worker_exec, this, code_} {
     main_scope_->add(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
 }
 
