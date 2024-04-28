@@ -24,6 +24,7 @@ void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
 }
 
 
+// TODO all variables accesses should be uprising lookups
 void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
     std::terminate(); //TODO after every expr exec change lst_expr_res ???
 }
@@ -45,6 +46,10 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     }
     if (instanceof<Return>(code)) {
         Return *rt = dynamic_cast<Return *>(code);
+
+        while (!scope_->get(Scope::function_ret_label).has_value()) {
+            scope_ = scope_->parent();
+        }
 
         if (scope_ == main_scope_) {
             finishing_.store(true);
@@ -70,7 +75,67 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
         scope_->store_last_exec_res(target->id());
         return;
     }
-    //TODO
+    if (instanceof<AugAssign>(code)) {
+        throw std::runtime_error("Interpreter: currently AugAssign is not supported");
+    }
+    if (instanceof<While>(code)) {
+        While *while_ = dynamic_cast<While *>(code);
+        scope_->change(Scope::while_loop_scope, ScopeEntry{ new Scope{ scope_ }, SCOPE });
+        scope_ = static_cast<Scope *>(scope_->get(Scope::while_loop_scope).value().value_);
+
+        while (true) {
+            interpret_expr(while_->test());
+            YObject *test_res = static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value();
+            if (test_res->get_typename() != "bool") {
+                throw std::runtime_error("Interpreter: While.test expression should be bool");
+            }
+            if (!test_res->get_value_as_bool()) {
+                break;
+            }
+            for (Stmt *stmt : while_->body()) {
+                interpret_stmt(stmt);
+            }
+        }
+        return;
+    }
+    if (instanceof<For>(code)) {
+        throw std::runtime_error("Interpreter: currently only while loops are supported");
+    }
+    if (instanceof<With>(code)) {
+        throw std::runtime_error("Interpreter: currently With are not supported");
+    }
+    if (instanceof<If>(code)) {
+        If *if_ = dynamic_cast<If *>(code);
+        scope_->change(Scope::if_scope, ScopeEntry{ new Scope{ scope_ }, SCOPE });
+        scope_ = static_cast<Scope *>(scope_->get(Scope::if_scope).value().value_);
+
+        interpret_expr(if_->test());
+        YObject *test_res = static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value();
+        if (test_res->get_typename() != "bool") {
+            throw std::runtime_error("Interpreter: If.test expression should be bool");
+        }
+        if (test_res->get_value_as_bool()) {
+            for (Stmt *stmt : if_->body()) {
+                interpret_stmt(stmt);
+            }
+        } else {
+            for (Stmt *stmt : if_->orelse()) {
+                interpret_stmt(stmt);
+            }
+        }
+        return;
+    }
+    if (instanceof<Expr>(code)) {
+        interpret_expr(dynamic_cast<Expr *>(code));
+    }
+    if (instanceof<Pass>(code)) {
+        return; // just skip pass instr
+    }
+    if (instanceof<Continue>(code) || instanceof<Break>(code)) {
+        throw std::runtime_error("Interpreter: in current version Break and Continue statements are not supported");
+    }
+
+    throw std::runtime_error("Interpreter: unexpected statement");
 }
 
 
@@ -85,7 +150,9 @@ void yapvm::interpreter::Interpreter::interpret(Node *code) {
 
 
 yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code)
-    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{__worker_exec, this, code_} {}
+    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{__worker_exec, this, code_} {
+    main_scope_->add(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
+}
 
 
 yapvm::interpreter::Interpreter::~Interpreter() { delete code_; }
@@ -113,8 +180,11 @@ void yapvm::interpreter::Interpreter::join() {
 }
 
 
-// TODO
 std::vector<yapvm::yobjects::ManagedObject *> yapvm::interpreter::Interpreter::get_register_queue() {
-    std::terminate();
-    return {};
+    std::vector<ManagedObject *> ret;
+    while (!register_queue_.empty()) {
+        ret.push_back(register_queue_.top());
+        register_queue_.pop();
+    }
+    return ret;
 }

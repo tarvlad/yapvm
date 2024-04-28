@@ -14,7 +14,8 @@ namespace yapvm::interpreter {
 enum ScopeEntryType {
     OBJECT,
     FUNCTION,
-    SCOPE
+    SCOPE,
+    LABEL // TODO implement break, continue via labels
 };
 
 
@@ -32,9 +33,12 @@ class Scope {
 
 public:
     constexpr static const char *lst_exec_res = "__yapvm_inner_last_exec_res";
+    constexpr static const char *while_loop_scope = "__yapvm_inner_while_loop_scope";
+    constexpr static const char *if_scope = "__yapvm_inner_if_scope";
+    constexpr static const char *function_ret_label = "__yapvm_inner_function_return_label";
 
     Scope();
-    Scope(Scope* parent) : parent_(parent) {};
+    Scope(Scope *parent) : parent_{ parent } {};
 
     bool add_object(std::string name, ManagedObject *value);
     bool add_function(std::string signature, FunctionDef *function);
@@ -44,11 +48,13 @@ public:
     void change(const std::string &name, ScopeEntry new_entry);
     void store_last_exec_res(const std::string &name);
 
+    ScopeEntry name_lookup(const std::string &name);
+
     ManagedObject *get_object(const std::string &name);
     FunctionDef *get_function(const std::string &signature);
     std::optional<ScopeEntry> get(const std::string &name);
     std::vector<Scope *> get_all_children() const;
-    Scope* parent() const;
+    Scope *parent() const;
 };
 
 }

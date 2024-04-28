@@ -4,10 +4,11 @@ import threading
 def dot_product_chunk(start, end, vector1, vector2, result, lock):
     chunk_result = 0
     for i in range(start, min(end, len(vector1))):
-        chunk_result += vector1[i] * vector2[i]
+        chunk_result = chunk_result + vector1[i] * vector2[i]
 
     with lock:
         result[0] += chunk_result
+
 
 
 def dot_product(vector1, vector2):
@@ -15,7 +16,7 @@ def dot_product(vector1, vector2):
     if vector_size <= 512:
         total = 0
         for i in range(vector_size):
-            total += vector1[i] * vector2[i]
+            total = total + vector1[i] * vector2[i]
         return total
     else:
         num_threads = 8

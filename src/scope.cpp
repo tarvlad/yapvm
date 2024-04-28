@@ -38,8 +38,21 @@ void Scope::change(const std::string &name, ScopeEntry new_entry) {
     entry = new_entry;
 }
 
-void Scope::store_last_exec_res(const std::string &name) {
-    change(name, get(lst_exec_res).value());
+void Scope::store_last_exec_res(const std::string &name) { change(name, get(lst_exec_res).value()); }
+
+
+ScopeEntry Scope::name_lookup(const std::string &name) {
+    Scope *checkee = this;
+    do {
+        std::optional<ScopeEntry> curr_scope_lookup_res = checkee->get(name);
+        if (curr_scope_lookup_res.has_value()) {
+            return curr_scope_lookup_res.value();
+        }
+        if (checkee->parent_ == nullptr) {
+            throw std::runtime_error("Scope: cannot find name [" + name + "] in program scope");
+        }
+        checkee = checkee->parent_;
+    } while (true);
 }
 
 
@@ -59,7 +72,7 @@ FunctionDef *Scope::get_function(const std::string &signature) {
 
 std::optional<ScopeEntry> Scope::get(const std::string &name) {
     std::optional<std::reference_wrapper<ScopeEntry>> opt_from_kv = scope_[name];
-    if (opt_from_kv == std::nullopt) return std::nullopt; 
+    if (opt_from_kv == std::nullopt) return std::nullopt;
     ScopeEntry se_ref = opt_from_kv.value().get();
     return std::optional<ScopeEntry>{ se_ref };
 }
