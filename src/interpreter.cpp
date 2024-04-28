@@ -255,7 +255,51 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         scope_->update_last_exec_res(resobj);
         return;
     }
-    //TODO
+    if (instanceof<UnaryOp>(code)) {
+        UnaryOp *unary_op = dynamic_cast<UnaryOp *>(code);
+        interpret_expr(unary_op->operand());
+        YObject *operand = LAST_EXEC_RES_YOBJ;
+
+        UnaryOpKind *op_kind = unary_op->op();
+        ManagedObject *resobj = nullptr;
+        if (instanceof<Not>(op_kind)) {
+            if (operand->get_typename() == "bool") {
+                bool value = !operand->get_value_as_bool();
+                resobj = new ManagedObject{ new YObject{ "bool", new bool{ value } } };
+            } else { // TODO
+                throw std::runtime_error("Interpreter: Not not supported for " + operand->get_typename());
+            }
+        } else if (instanceof<USub>(op_kind)) {
+            if (operand->get_typename() == "int") {
+                ssize_t value = -operand->get_value_as_int();
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ value } } };
+            } else if (operand->get_typename() == "float") {
+                double value = -operand->get_value_as_float();
+                resobj = new ManagedObject{ new YObject{ "float", new double{ value } } };
+            } else { // TODO
+                throw std::runtime_error("Interpreter: USub not supported for " + operand->get_typename());
+            }
+        }
+
+        if (resobj == nullptr) {
+            throw std::runtime_error("Interpreter: unexpected UnaryOpKind");
+        }
+        register_queue_.push(resobj);
+        scope_->update_last_exec_res(resobj);
+        return;
+    }
+    if (instanceof<Compare>(code)) {
+        Compare *compare = dynamic_cast<Compare *>(code);
+        if (compare->comparators().size() != 1) {
+            throw std::runtime_error("Interpreter: Compare currently supported only with one argument");
+        }
+        CmpOpKind *op = compare->ops()[0];
+        interpret_expr(compare->comparators()[0]);
+        YObject *comparator = LAST_EXEC_RES_YOBJ;
+        //TODO
+    }
+
+    throw std::runtime_error("Interpreter: unexpected expression");
 }
 
 
