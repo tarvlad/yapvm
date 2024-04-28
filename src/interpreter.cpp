@@ -413,6 +413,20 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         scope_->update_last_exec_res(resobj);
         return;
     }
+    if (instanceof<Call>(code)) {
+        Call *call = dynamic_cast<Call *>(code);
+        if (!instanceof<Name>(call->func().get())) {
+            throw std::runtime_error("Interpreter: Call.func should be Name");
+        }
+        const std::string &func_name = dynamic_cast<Name *>(call->func().get())->id();
+        //TODO handle print, constructors (str(x), int(x), float(x), list(x), dict(x)?) and vice versa
+
+        std::vector<ManagedObject *> call_args;
+        for (Expr *i : call->args()) {
+            //TODO interpret expr-s
+        }
+        //TODO create new scope, add function args as names, jump to it
+    }
 
     throw std::runtime_error("Interpreter: unexpected expression");
 }
