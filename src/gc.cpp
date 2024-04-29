@@ -20,7 +20,12 @@ void YGC::mark() {
     while (!deq.empty()) {
         ManagedObject *curr_obj = deq.front();
         deq.pop_front();
-        std::vector<ManagedObject *> kids = curr_obj->value()->get_fields();
+        std::vector<ManagedObject *> kids;
+        if (is_collection(curr_obj->value())) {
+            kids = get_collection_elements(curr_obj->value());
+        } else {
+            kids = curr_obj->value()->get_fields();
+        }
         if (kids.empty()) continue;
         for (ManagedObject *kid : kids) {
             if (!kid->is_marked()) {
@@ -40,8 +45,14 @@ void YGC::sweep() {
             right_.push_back(obj);
         }
     }
-    left_.swap(right_);
-    right_.clear();
+   left_.swap(right_);
+   right_.clear();
+}
+
+void YGC::fill_left(std::vector<ManagedObject *> &vec) {
+    for (ManagedObject *obj : vec) {
+        left_.push_back(obj);
+    }
 }
 
 void YGC::collect() {

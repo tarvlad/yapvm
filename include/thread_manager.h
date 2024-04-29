@@ -8,8 +8,8 @@ class ThreadManager {
 
 
 public:
-    ThreadManager();
-    ~ThreadManager();
+    ThreadManager() = default;
+    ~ThreadManager() =  default;
 
     void register_interpreter(Interpreter *interpreter);
     void unregister_interpreter();

@@ -92,8 +92,15 @@ YObject *constr_ystring(std::string value);
 YObject *constr_ybool(bool value);
 YObject *constr_ynone();
 YObject *constr_ylist();
+YObject *constr_ylist(std::vector<ManagedObject *> *);
 YObject *constr_ydict();
 //TODO
+
+// work with collections
+bool is_collection(YObject *); 
+std::vector<ManagedObject *> get_list_elements(YObject *);
+std::vector<ManagedObject *> get_dict_elements(YObject *);
+std::vector<ManagedObject *> get_collection_elements(YObject *);
 
 class ManagedObject {
     YObject *value_;
