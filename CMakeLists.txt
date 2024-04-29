@@ -40,6 +40,7 @@ set(SOURCE_ALL
         src/scope.cpp
 
         include/thread_manager.h
+        src/thread_manager.cpp
 )
 
 

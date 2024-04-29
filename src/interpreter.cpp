@@ -435,7 +435,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             //TODO THREADS
             throw std::runtime_error("Interpreter: threads currently in work");
         }
-        //TODO handle constructors (str(x), int(x), float(x), list(x), dict(x)?) and vice versa
+        //TODO dict
         if (func_name == "str") {
             if (call->args().size() != 1) {
                 throw std::runtime_error("Interpreter: str can take only 1 argument");
@@ -554,6 +554,23 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         // expected that function ended with return -> should some kind of a delete allocated scope
         scope_->del(scope_name); // TODO check
         return;
+    }
+    if (instanceof<Constant>(code)) {
+        Constant *constant = dynamic_cast<Constant *>(code);
+        YObject *c_val = constant->value();
+        ManagedObject *resobj = new ManagedObject{ c_val };
+        register_queue_.push(resobj);
+        scope_->update_last_exec_res(resobj);
+        return;
+    }
+    if (instanceof<Attribute>(code)) {
+        Attribute *attribute = dynamic_cast<Attribute *>(code);
+
+
+        throw std::runtime_error("Interpreter: compound objects currently not supported");
+    }
+    if (instanceof<Subscript>(code)) {
+
     }
 
     throw std::runtime_error("Interpreter: unexpected expression");
