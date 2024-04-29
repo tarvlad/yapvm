@@ -42,6 +42,7 @@ void YGC::sweep() {
         if (!obj->is_marked()) {
             delete(obj);
         } else {
+            obj->unmark();
             right_.push_back(obj);
         }
     }
@@ -53,6 +54,10 @@ void YGC::fill_left(std::vector<ManagedObject *> &vec) {
     for (ManagedObject *obj : vec) {
         left_.push_back(obj);
     }
+}
+
+std::vector<ManagedObject *> &YGC::left() {
+    return left_;
 }
 
 void YGC::collect() {

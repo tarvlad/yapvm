@@ -62,7 +62,7 @@ TEST(gc_test, unreacheble) {
     scope.add_object("list1", list1_obj);    
     scope.add_object("list2", list2_obj);    
 
-    // list2 = list1 now list1 are unreachable
+    // list2 = list1 now list2 are unreachable
     scope.change("list2", *(scope.get("list1")));
 
     ThreadManager tm;
@@ -153,30 +153,39 @@ TEST(gc_test, sweep) {
     scope.add_object("f", f_obj);
     scope.add_object("a", a_obj);    
 
-    std::vector<ManagedObject *> objects {GC_CASH_LIMIT + 1};
+    std::vector<ManagedObject *> objects {GC_CASH_LIMIT + 3};
 
     for (size_t i = 0; i < objects.size(); i++) {
         objects[i] = new ManagedObject { constr_yint(i) };
     }
+    objects.push_back(a_obj);
+    objects.push_back(f_obj);
     gc.fill_left(objects);
-    gc.mark();
-    gc.sweep();
 
+    gc.mark();
     EXPECT_TRUE(a_obj->is_marked());
     EXPECT_TRUE(f_obj->is_marked());
 
+    gc.sweep();
+    EXPECT_EQ(2, gc.left().size());
+    EXPECT_FALSE(a_obj->is_marked());
+    EXPECT_FALSE(f_obj->is_marked());
+
 
     for (size_t i = 0; i < objects.size(); i++) {
         objects[i] = new ManagedObject { constr_yint(i) };
     }
 
+    gc.fill_left(objects);
     scope.change("f", *(scope.get("a")));
 
     gc.mark();
     gc.sweep();
 
+    EXPECT_EQ(1, gc.left().size());
+    EXPECT_EQ(42, *(gc.left()[0]->value()->get_value_as_int()));
 
-    EXPECT_TRUE(a_obj->is_marked());
+    
 }
 
 

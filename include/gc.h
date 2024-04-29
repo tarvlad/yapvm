@@ -33,6 +33,7 @@ public:
     void collect();
     // TODO function inly for testing, will be deprecated
     void fill_left(std::vector<ManagedObject *> &);
+    std::vector<ManagedObject *> &left();
 };
 
 
