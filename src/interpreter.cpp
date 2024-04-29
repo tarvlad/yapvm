@@ -5,6 +5,7 @@
 
 // TODO rewrite as Scope method
 #define LAST_EXEC_RES_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value()
+#define LAST_EXEC_RES_M_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)
 
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
@@ -14,7 +15,6 @@ void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
 
     for (const scoped_ptr<Stmt> &i: code->body()) {
         interpret(i);
-        //TODO check and park (handle unpark too)
         if (finishing_.load()) {
             break;
         }
@@ -419,13 +419,141 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             throw std::runtime_error("Interpreter: Call.func should be Name");
         }
         const std::string &func_name = dynamic_cast<Name *>(call->func().get())->id();
-        //TODO handle print, constructors (str(x), int(x), float(x), list(x), dict(x)?) and vice versa
-
-        std::vector<ManagedObject *> call_args;
-        for (Expr *i : call->args()) {
-            //TODO interpret expr-s
+        if (func_name == "print") {
+            if (call->args().size() != 1) {
+                throw std::runtime_error("Interpreter: print can take only 1 argument");
+            }
+            interpret_expr(call->args()[0]);
+            YObject *print_arg = LAST_EXEC_RES_YOBJ;
+            if (print_arg->get_typename() != "string") {
+                throw std::runtime_error("Interpreter: print argument should be string");
+            }
+            std::cout << print_arg->get_value_as_string();
+            return;
         }
-        //TODO create new scope, add function args as names, jump to it
+        if (func_name == Scope::yapvm_thread_func_name) {
+            //TODO THREADS
+            throw std::runtime_error("Interpreter: threads currently in work");
+        }
+        //TODO handle constructors (str(x), int(x), float(x), list(x), dict(x)?) and vice versa
+        if (func_name == "str") {
+            if (call->args().size() != 1) {
+                throw std::runtime_error("Interpreter: str can take only 1 argument");
+            }
+            interpret_expr(call->args()[0]);
+            YObject *arg = LAST_EXEC_RES_YOBJ;
+
+            ManagedObject *resobj = nullptr;
+            if (arg->get_typename() == "string") {
+                resobj = new ManagedObject{ new YObject{ "string", new std::string{ arg->get_value_as_string() } } };
+            } else if (arg->get_typename() == "int") {
+                resobj = new ManagedObject{ new YObject{ "string", new std::string{ std::to_string(arg->get_value_as_int()) } } };
+            } else if (arg->get_typename() == "float") {
+                resobj = new ManagedObject{ new YObject{ "string", new std::string{ std::to_string(arg->get_value_as_float()) } } };
+            } else if (arg->get_typename() == "bool") {
+                std::string val = "False";
+                if (arg->get_value_as_bool()) {
+                    val = "True";
+                }
+                resobj = new ManagedObject{ new YObject{ "string", new std::string{  std::move(val) } } };
+            }
+
+            if (resobj == nullptr) {
+                throw std::runtime_error("Interpreter: cannot construct string from " + arg->get_typename());
+            }
+            register_queue_.push(resobj);
+            scope_->update_last_exec_res(resobj);
+            return;
+        }
+        if (func_name == "int") {
+            if (call->args().size() != 1) {
+                throw std::runtime_error("Interpreter: int can take only 1 argument");
+            }
+            interpret_expr(call->args()[0]);
+            YObject *arg = LAST_EXEC_RES_YOBJ;
+
+            ManagedObject *resobj = nullptr;
+            if (arg->get_typename() == "string") {
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ from_str<ssize_t>(arg->get_value_as_string()) } } };
+            } else if (arg->get_typename() == "int") {
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ arg->get_value_as_int() } } };
+            } else if (arg->get_typename() == "float") {
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ static_cast<ssize_t>(arg->get_value_as_float()) } } };
+            } else if (arg->get_typename() == "bool") {
+                ssize_t val = 0;
+                if (arg->get_value_as_bool()) {
+                    val = 1;
+                }
+                resobj = new ManagedObject{ new YObject{ "int", new ssize_t{ val } } };
+            }
+
+            if (resobj == nullptr) {
+                throw std::runtime_error("Interpreter: cannot construct int from " + arg->get_typename());
+            }
+            register_queue_.push(resobj);
+            scope_->update_last_exec_res(resobj);
+            return;
+        }
+        if (func_name == "float") {
+            if (call->args().size() != 1) {
+                throw std::runtime_error("Interpreter: float can take only 1 argument");
+            }
+            interpret_expr(call->args()[0]);
+            YObject *arg = LAST_EXEC_RES_YOBJ;
+
+            ManagedObject *resobj = nullptr;
+            if (arg->get_typename() == "string") {
+                resobj = new ManagedObject{ new YObject{ "float", new double{ from_str<double>(arg->get_value_as_string()) } } };
+            } else if (arg->get_typename() == "int") {
+                resobj = new ManagedObject{ new YObject{ "float", new double{ static_cast<double>(arg->get_value_as_int()) } } };
+            } else if (arg->get_typename() == "float") {
+                resobj = new ManagedObject{ new YObject{ "float", new double{ arg->get_value_as_float() } } };
+            }
+
+            if (resobj == nullptr) {
+                throw std::runtime_error("Interpreter: cannot construct float from " + arg->get_typename());
+            }
+            register_queue_.push(resobj);
+            scope_->update_last_exec_res(resobj);
+            return;
+        }
+        if (func_name == "list") {
+            if (!call->args().empty()) {
+                throw std::runtime_error("Interpreter: list constructor cannot take arguments");
+            }
+            ManagedObject *resobj = new ManagedObject{ new YObject{ "list", new std::vector<ManagedObject *>{} } };
+            register_queue_.push(resobj);
+            scope_->update_last_exec_res(resobj);
+            return;
+        }
+
+        FunctionDef *function_def = static_cast<FunctionDef *>(
+            scope_->name_lookup(Scope::scope_entry_function_name(func_name)).value_
+        );
+        std::vector<ManagedObject *> call_args;
+        for (Expr *e : call->args()) {
+            interpret_expr(e);
+            call_args.push_back(LAST_EXEC_RES_M_YOBJ);
+        }
+        std::string scope_name = Scope::scope_entry_call_subscope_name(func_name);
+        scope_->add_child_scope(scope_name, new Scope{ scope_ });
+        scope_ = static_cast<Scope *>(scope_->get(scope_name).value().value_);
+
+        if (call->args().size() != function_def->args().size()) {
+            throw std::runtime_error("Interpreter: invalid number of arguments for function " + func_name);
+        }
+        for (size_t i = 0; i < call->args().size(); i++) {
+            scope_->add_object(function_def->args()[i], call_args[i]);
+        }
+        for (Stmt *stmt : function_def->body()) {
+            interpret(stmt);
+        }
+        if (dynamic_cast<Return *>(function_def->body()[function_def->body().size() - 1].get()) == nullptr) {
+            throw std::runtime_error("Interpreter: function should end with return statement");
+        }
+        // expected that function ended with return -> should some kind of a delete allocated scope
+        scope_->del(scope_name); // TODO check
+        return;
     }
 
     throw std::runtime_error("Interpreter: unexpected expression");
@@ -440,7 +568,7 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     }
     if (instanceof<FunctionDef>(code)) {
         FunctionDef *fdef = dynamic_cast<FunctionDef *>(code);
-        scope_->add_function(fdef->name(), fdef);
+        scope_->add_function(Scope::scope_entry_function_name(fdef->name()), fdef);
         return;
     }
     if (instanceof<ClassDef>(code)) {
@@ -543,6 +671,7 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
 
 void yapvm::interpreter::Interpreter::interpret(Node *code) {
     assert(code != nullptr);
+    //TODO check and park (handle unpark too)
     if (instanceof<Stmt>(code)) {
         interpret_stmt(dynamic_cast<Stmt *>(code));
         return;

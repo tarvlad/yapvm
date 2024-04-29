@@ -1,4 +1,5 @@
 import threading
+import yapvm_cpython_thread_support
 
 
 def dot_product_chunk(start, end, vector1, vector2, result, lock):
@@ -8,7 +9,6 @@ def dot_product_chunk(start, end, vector1, vector2, result, lock):
 
     with lock:
         result[0] += chunk_result
-
 
 
 def dot_product(vector1, vector2):
@@ -24,7 +24,7 @@ def dot_product(vector1, vector2):
         threads = list()
         result = list()
         result.append(0)
-        lock = threading.Lock()
+        lock = threading.Lock() # TODO
 
         for i in range(num_threads):
             start = i * chunk_size
@@ -39,12 +39,11 @@ def dot_product(vector1, vector2):
             args.append(vector2)
             args.append(result)
             args.append(lock)
-            thread = threading.Thread(None, dot_product_chunk, "Thread", args)
+            thread = yapvm_cpython_thread_support.__yapvm_thread(dot_product_chunk, args)
             threads.append(thread)
-            thread.start()
 
         for thread in threads:
-            thread.join()
+            yapvm_cpython_thread_support.__yapvm_thread_join(thread)
 
         return result[0]
 
