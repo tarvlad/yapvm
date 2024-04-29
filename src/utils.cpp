@@ -81,6 +81,11 @@ size_t yapvm::cstrsz(const char *str) {
 __CheckResObj yapvm::check(bool cond) { return __CheckResObj{cond}; }
 
 
+std::string yapvm::read_file_ast(std::string fname) {
+    return exec("python test_resources/get_py_ast.py " + std::move(fname));
+}
+
+
 std::string yapvm::exec(const std::string &s) {
     const char *cmd = s.c_str();
     std::string result;

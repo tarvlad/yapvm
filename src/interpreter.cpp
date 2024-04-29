@@ -11,12 +11,14 @@ static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
-    while (!resuming_.load()) {
+    while (resuming_.load()) {
         std::this_thread::sleep_for(std::chrono::nanoseconds{500});
     }
 
     for (const scoped_ptr<Stmt> &i: code->body()) {
-        interpret(i);
+        if (!interpret(i)) {
+            break;
+        }
         if (finishing_.load()) {
             break;
         }
@@ -27,6 +29,7 @@ void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
     stopping_.store(false);
     finished_.store(true);
     finishing_.store(false);
+    thread_manager_->unregister_interpreter(this);
 }
 
 
@@ -443,7 +446,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             std::string callee_name = dynamic_cast<Name *>(call->args()[0].get())->id();
             ScopeEntry callee_sce = scope_->name_lookup(callee_name);
             if (callee_sce.type_ != FUNCTION) {
-                throw std::runtime_error("Interpretere: cannot find function " + callee_name);
+                throw std::runtime_error("Interpreterer: cannot find function " + callee_name);
             }
             FunctionDef *callee = static_cast<FunctionDef *>(callee_sce.value_);
             if (callee->args().size() != 1) {
@@ -461,12 +464,12 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             } while (GLOBAL_BORN_THREAD_ID.compare_exchange_strong(id, id + 1));
             std::string thread_name = Scope::scope_entry_thread_name(id);
 
-            scope_->add(thread_name, ScopeEntry{ new Scope{scope_}, SCOPE });
+            scope_->change(thread_name, ScopeEntry{ new Scope{scope_}, SCOPE });
             Scope *thread_scope = static_cast<Scope *>(scope_->get(thread_name).value().value_);
-            thread_scope->add(callee->args()[0], ScopeEntry{ arg, OBJECT });
+            thread_scope->change(callee->args()[0], ScopeEntry{ arg, OBJECT });
 
             Interpreter *thread = new Interpreter{ std::move(mod), thread_manager_, thread_scope };
-            thread_manager_->register_interpreter(thread);
+            thread->launch();
         }
         //TODO dict
         if (func_name == "str") {
@@ -569,17 +572,20 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             call_args.push_back(LAST_EXEC_RES_M_YOBJ);
         }
         std::string scope_name = Scope::scope_entry_call_subscope_name(func_name);
-        scope_->add_child_scope(scope_name, new Scope{ scope_ });
+        scope_->change(scope_name, ScopeEntry{ new Scope{ scope_ }, SCOPE });
         scope_ = static_cast<Scope *>(scope_->get(scope_name).value().value_);
+        scope_->change(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
 
         if (call->args().size() != function_def->args().size()) {
             throw std::runtime_error("Interpreter: invalid number of arguments for function " + func_name);
         }
         for (size_t i = 0; i < call->args().size(); i++) {
-            scope_->add_object(function_def->args()[i], call_args[i]);
+            scope_->change(function_def->args()[i], ScopeEntry{ call_args[i], OBJECT });
         }
         for (Stmt *stmt : function_def->body()) {
-            interpret(stmt);
+            if (!interpret(stmt)) {
+                break;
+            }
         }
         if (dynamic_cast<Return *>(function_def->body()[function_def->body().size() - 1].get()) == nullptr) {
             throw std::runtime_error("Interpreter: function should end with return statement");
@@ -596,21 +602,31 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         scope_->update_last_exec_res(resobj);
         return;
     }
+    if (instanceof<Name>(code)) {
+        Name *name = dynamic_cast<Name *>(code);
+        ScopeEntry n_sce = scope_->name_lookup(name->id());
+        if (n_sce.type_ != OBJECT) {
+            throw std::runtime_error("Interpreter: " + name->id() + " is not name of object");
+        }
+        scope_->update_last_exec_res(static_cast<ManagedObject *>(n_sce.value_));
+        return;
+    }
+    //TODO attribute, subscript
 
     throw std::runtime_error("Interpreter: unexpected expression");
 }
 
 
-void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
+bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     assert(code != nullptr);
 
     if (instanceof<Import>(code)) {
-        return; // currently just ignore
+        return true; // currently just ignore
     }
     if (instanceof<FunctionDef>(code)) {
         FunctionDef *fdef = dynamic_cast<FunctionDef *>(code);
-        scope_->add_function(Scope::scope_entry_function_name(fdef->name()), fdef);
-        return;
+        scope_->change(Scope::scope_entry_function_name(fdef->name()), ScopeEntry{ fdef, FUNCTION });
+        return true;
     }
     if (instanceof<ClassDef>(code)) {
         throw std::runtime_error("Interpreter: ClassDef currently not supported");
@@ -618,22 +634,26 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     if (instanceof<Return>(code)) {
         Return *rt = dynamic_cast<Return *>(code);
 
+        if (rt->returns_anything()) {
+            interpret_expr(rt->value());
+        }
+
         while (!scope_->get(Scope::function_ret_label).has_value()) {
+            Scope *prev = scope_;
             scope_ = scope_->parent();
+            scope_->change(Scope::lst_exec_res, prev->get(Scope::lst_exec_res).value());
+            delete prev;
         }
 
         if (scope_ == main_scope_) {
             finishing_.store(true);
-            return;
-        }
-        if (rt->returns_anything()) {
-            interpret_expr(rt->value());
+            return false;
         }
         Scope *prev = scope_;
         scope_ = scope_->parent();
         scope_->change(Scope::lst_exec_res, prev->get(Scope::lst_exec_res).value());
         delete prev;
-        return;
+        return false;
     }
     if (instanceof<Assign>(code)) {
         Assign *assign = dynamic_cast<Assign *>(code);
@@ -644,7 +664,7 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
         assert(target != nullptr);
         interpret_expr(assign->value());
         scope_->store_last_exec_res(target->id());
-        return;
+        return true;
     }
     if (instanceof<AugAssign>(code)) {
         throw std::runtime_error("Interpreter: currently AugAssign is not supported");
@@ -664,10 +684,12 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
                 break;
             }
             for (Stmt *stmt : while_->body()) {
-                interpret_stmt(stmt);
+                if (!interpret_stmt(stmt)) {
+                    break;
+                }
             }
         }
-        return;
+        return true;
     }
     if (instanceof<For>(code)) {
         throw std::runtime_error("Interpreter: currently only while loops are supported");
@@ -687,20 +709,25 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
         }
         if (test_res->get_value_as_bool()) {
             for (Stmt *stmt : if_->body()) {
-                interpret_stmt(stmt);
+                if (!interpret_stmt(stmt)) {
+                    return false;
+                }
             }
         } else {
             for (Stmt *stmt : if_->orelse()) {
-                interpret_stmt(stmt);
+                if (!interpret_stmt(stmt)) {
+                    return false;
+                }
             }
         }
-        return;
+        return true;
     }
     if (instanceof<ExprStmt>(code)) {
         interpret_expr(dynamic_cast<ExprStmt *>(code)->value());
+        return true;
     }
     if (instanceof<Pass>(code)) {
-        return; // just skip pass instr
+        return true; // just skip pass instr
     }
     if (instanceof<Continue>(code) || instanceof<Break>(code)) {
         throw std::runtime_error("Interpreter: in current version Break and Continue statements are not supported");
@@ -710,21 +737,21 @@ void yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
 }
 
 
-void yapvm::interpreter::Interpreter::interpret(Node *code) {
+bool yapvm::interpreter::Interpreter::interpret(Node *code) {
     assert(code != nullptr);
     //TODO check and park (handle unpark too)
     if (instanceof<Stmt>(code)) {
-        interpret_stmt(dynamic_cast<Stmt *>(code));
-        return;
+        return interpret_stmt(dynamic_cast<Stmt *>(code));
     }
     throw std::runtime_error("Interpreter: interpret() can deal only with Stmt-s");
 }
 
 
 yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope)
-    : code_{code.steal()}, scope_{scope}, main_scope_{scope_}, worker_{&Interpreter::__worker_exec, this, code_},
+    : code_{code.steal()}, scope_{scope}, main_scope_{scope_},
       thread_manager_{ tm } {
-    main_scope_->add(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
+    tm->register_interpreter(this);
+    main_scope_->change(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
 }
 
 
@@ -743,6 +770,10 @@ void yapvm::interpreter::Interpreter::run() {
     while (stopping_.load()) {
     } // wait while thread parks
     resuming_.store(true); // all {stopping <- true} actions should hb {resuming <- true} actions
+}
+
+void yapvm::interpreter::Interpreter::launch() {
+    worker_ = std::thread{&Interpreter::__worker_exec, this, code_};
 }
 
 bool yapvm::interpreter::Interpreter::is_finished() const { return finished_.load(); }

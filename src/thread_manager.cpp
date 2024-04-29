@@ -12,9 +12,10 @@ void yapvm::interpreter::ThreadManager::unregister_interpreter(Interpreter *inte
             std::vector<Interpreter *>::iterator it = interpreters_.begin();
             std::advance(it, i);
             interpreters_.erase(it);
-            return;
+            break;
         }
     }
+    join_queue_.push_back(interpreter);
 }
 
 
@@ -42,8 +43,17 @@ bool yapvm::interpreter::ThreadManager::is_all_parked() const {
 
 
 void yapvm::interpreter::ThreadManager::run_all() {
-    for (Interpreter *i : interpreters_) {
+    for (Interpreter *i: interpreters_) {
         i->run();
-        while (i->is_parked());
+        while (i->is_parked())
+            ;
+    }
+}
+
+void yapvm::interpreter::ThreadManager::finish_waiting() {
+    while (!join_queue_.empty()) {
+        Interpreter *beg = join_queue_.front();
+        join_queue_.pop_front();
+        beg->join();
     }
 }

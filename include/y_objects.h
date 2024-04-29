@@ -39,7 +39,6 @@ class YObject {
     KVStorage<std::string, ManagedObject *> fields_;
     KVStorage<std::string, ast::FunctionDef *> methods_;
     void *___yapvm_objval_; // reinterpret_cast for usage, yes yes very bad gcc-style type erasure
-                            // chosen for performance
 
 public:
     YObject(std::string type_name);

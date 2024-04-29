@@ -174,6 +174,9 @@ void assume(bool cond, Callable call_if_error, Args&&... args) {
 }
 
 
+std::string read_file_ast(std::string fname);
+
+
 std::string exec(const std::string &s);
 
 std::string trim(const std::string &s);
