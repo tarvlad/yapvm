@@ -40,6 +40,7 @@ set(SOURCE_ALL
         src/scope.cpp
 
         include/thread_manager.h
+        src/thread_manager.cpp
 )
 
 
@@ -84,6 +85,11 @@ add_executable(scope_test
         ${SOURCE_ALL}
 )
 
+add_executable(interpreter_test
+        test/interpreter_test.cpp
+        ${SOURCE_ALL}
+)
+
 target_link_libraries(
         y_object_test
         GTest::gtest_main
@@ -109,8 +115,14 @@ target_link_libraries(
         GTest::gtest_main
 )
 
+target_link_libraries(
+        interpreter_test
+        GTest::gtest_main
+)
+
 include(GoogleTest)
 gtest_discover_tests(y_object_test)
 gtest_discover_tests(ygc_test)
 gtest_discover_tests(parser_test)
 gtest_discover_tests(kv_storage_test)
+gtest_discover_tests(interpreter_test)

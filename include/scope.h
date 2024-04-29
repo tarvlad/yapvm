@@ -15,7 +15,8 @@ enum ScopeEntryType {
     OBJECT,
     FUNCTION,
     SCOPE,
-    LABEL // TODO implement break, continue via labels
+    LABEL,
+    THREAD_SCOPE // TODO implement break, continue via labels
 };
 
 
@@ -36,6 +37,7 @@ public:
     constexpr static const char *while_loop_scope = "__yapvm_inner_while_loop_scope";
     constexpr static const char *if_scope = "__yapvm_inner_if_scope";
     constexpr static const char *function_ret_label = "__yapvm_inner_function_return_label";
+    constexpr static const char *yapvm_thread_func_name = "__yapvm_thread";
 
     Scope();
     Scope(Scope *parent) : parent_{ parent } {};
@@ -46,9 +48,15 @@ public:
     bool add(std::string name, ScopeEntry entry);
 
     void change(const std::string &name, ScopeEntry new_entry);
+    void del(const std::string &name);
     void store_last_exec_res(const std::string &name);
+    void update_last_exec_res(ManagedObject *value);
 
     ScopeEntry name_lookup(const std::string &name);
+
+    static std::string scope_entry_function_name(const std::string &name);
+    static std::string scope_entry_call_subscope_name(const std::string &name);
+    static std::string scope_entry_thread_name(size_t id);
 
     ManagedObject *get_object(const std::string &name);
     FunctionDef *get_function(const std::string &signature);

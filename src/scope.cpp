@@ -38,7 +38,15 @@ void Scope::change(const std::string &name, ScopeEntry new_entry) {
     entry = new_entry;
 }
 
+void Scope::del(const std::string &name) {
+    scope_.del(name);
+}
+
 void Scope::store_last_exec_res(const std::string &name) { change(name, get(lst_exec_res).value()); }
+
+void Scope::update_last_exec_res(ManagedObject *value) {
+    change(Scope::lst_exec_res, ScopeEntry{ value, OBJECT });
+}
 
 
 ScopeEntry Scope::name_lookup(const std::string &name) {
@@ -53,6 +61,19 @@ ScopeEntry Scope::name_lookup(const std::string &name) {
         }
         checkee = checkee->parent_;
     } while (true);
+}
+
+
+std::string Scope::scope_entry_function_name(const std::string &name) { return "__yapvm_inner_function_" + name; }
+
+
+std::string Scope::scope_entry_call_subscope_name(const std::string &name) {
+    return "__yapvm_inner_call_scope_" + name;
+}
+
+
+std::string Scope::scope_entry_thread_name(size_t id) {
+    return "__yapvm_thread_scope_" + id;
 }
 
 

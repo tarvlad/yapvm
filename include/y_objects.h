@@ -39,7 +39,6 @@ class YObject {
     KVStorage<std::string, ManagedObject *> fields_;
     KVStorage<std::string, ast::FunctionDef *> methods_;
     void *___yapvm_objval_; // reinterpret_cast for usage, yes yes very bad gcc-style type erasure
-                            // chosen for performance
 
 public:
     YObject(std::string type_name);
@@ -67,13 +66,13 @@ public:
 
     void set____yapvm_objval_(void *value);
 
-    bool *get_value_as_bool() const;
+    bool get_value_as_bool() const;
 
-    std::string *get_value_as_string() const;
+    std::string get_value_as_string() const;
 
-    double *get_value_as_float() const;
+    double get_value_as_float() const;
 
-    ssize_t *get_value_as_int() const;
+    ssize_t get_value_as_int() const;
 
     void set_value_as_bool(bool value) const;
 
