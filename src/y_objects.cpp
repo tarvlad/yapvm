@@ -79,6 +79,14 @@ std::vector<std::string *> yapvm::yobjects::YObject::get_fields_names() const {
     return fields_.get_live_entries_keys();
 }
 
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::YObject::get_fields() {
+    std::vector<ManagedObject *> res;
+    std::vector<std::string *> names = get_fields_names();
+    for (std::string *name : names) {
+        res.push_back(get_field(*name));
+    }
+    return res;
+}
 
 void *yapvm::yobjects::YObject::get____yapvm_objval_() const { return ___yapvm_objval_; }
 
@@ -148,6 +156,57 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist() {
     return new YObject{"list", new std::vector<ManagedObject *>{}};
 }
 
+
+yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist(std::vector<yapvm::yobjects::ManagedObject *> *vec) {
+    return new YObject{"list", vec};
+}
+
+
+bool yapvm::yobjects::is_collection(yapvm::yobjects::YObject * yobj) {
+    if (yobj->get_typename() == "list") {
+        return true;
+    }
+    if (yobj->get_typename() == "dict") {
+        return true;
+    }
+    return false;
+} 
+
+
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_list_elements(yapvm::yobjects::YObject *yobj) {
+    // TODO maybe add checks or hide this function
+    return *static_cast<std::vector<yapvm::yobjects::ManagedObject *> *>(yobj->get____yapvm_objval_());
+}
+
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_dict_elements(yapvm::yobjects::YObject *yobj) {
+    // TODO maybe add checks or hide this function
+    KVStorage<yapvm::yobjects::ManagedObject *, yapvm::yobjects::ManagedObject *> *dict = static_cast<KVStorage<yapvm::yobjects::ManagedObject *, yapvm::yobjects::ManagedObject *> *>(yobj->get____yapvm_objval_());
+    // TODO 
+    std::vector<yapvm::yobjects::ManagedObject **> values = dict->get_live_entries_values();
+    std::vector<yapvm::yobjects::ManagedObject **> keys = dict->get_live_entries_keys();
+    std::vector<yapvm::yobjects::ManagedObject *> res{keys.size() + values.size()};
+
+    for (yapvm::yobjects::ManagedObject **val : values) {
+        res.push_back(*val);
+    }
+    for (yapvm::yobjects::ManagedObject **key : keys) {
+        res.push_back(*key);
+    }
+    
+    return res;
+}
+
+
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_collection_elements(yapvm::yobjects::YObject *yobj) {
+    // TODO maybe add checks
+    if (yobj->get_typename() == "list") {
+        return get_list_elements(yobj);
+    }
+    if (yobj->get_typename() == "dict") {
+        return get_dict_elements(yobj);
+    }
+    return std::vector<yapvm::yobjects::ManagedObject *> { };
+}
 
 struct __yobj_hash {
     size_t operator()(yapvm::yobjects::ManagedObject *o) const {
