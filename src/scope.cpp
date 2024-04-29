@@ -63,10 +63,17 @@ ScopeEntry Scope::name_lookup(const std::string &name) {
     } while (true);
 }
 
+
 std::string Scope::scope_entry_function_name(const std::string &name) { return "__yapvm_inner_function_" + name; }
+
 
 std::string Scope::scope_entry_call_subscope_name(const std::string &name) {
     return "__yapvm_inner_call_scope_" + name;
+}
+
+
+std::string Scope::scope_entry_thread_name(size_t id) {
+    return "__yapvm_thread_scope_" + id;
 }
 
 

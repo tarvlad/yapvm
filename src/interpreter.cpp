@@ -2,10 +2,12 @@
 #include <chrono>
 #include <cmath>
 
+static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 
 // TODO rewrite as Scope method
 #define LAST_EXEC_RES_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value()
 #define LAST_EXEC_RES_M_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)
+
 
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
@@ -432,8 +434,39 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             return;
         }
         if (func_name == Scope::yapvm_thread_func_name) {
-            //TODO THREADS
-            throw std::runtime_error("Interpreter: threads currently in work");
+            if (call->args().size() != 2) {
+                throw std::runtime_error("Interpreter: thread should have 2 params - function and args to call");
+            }
+            if (dynamic_cast<Name *>(call->args()[0].get()) == nullptr) {
+                throw std::runtime_error("Interpreter: thread first argument should be function name");
+            }
+            std::string callee_name = dynamic_cast<Name *>(call->args()[0].get())->id();
+            ScopeEntry callee_sce = scope_->name_lookup(callee_name);
+            if (callee_sce.type_ != FUNCTION) {
+                throw std::runtime_error("Interpretere: cannot find function " + callee_name);
+            }
+            FunctionDef *callee = static_cast<FunctionDef *>(callee_sce.value_);
+            if (callee->args().size() != 1) {
+                throw std::runtime_error("Interpreter: thread callee should have only one argument");
+            }
+            std::vector<scoped_ptr<Stmt>> new_thread_body = callee->body(); // copy
+            scoped_ptr<Module> mod = new Module{ std::move(new_thread_body) };
+
+            interpret_expr(call->args()[1]);
+            YObject *arg = LAST_EXEC_RES_YOBJ;
+
+            size_t id;
+            do {
+                id = GLOBAL_BORN_THREAD_ID.load();
+            } while (GLOBAL_BORN_THREAD_ID.compare_exchange_strong(id, id + 1));
+            std::string thread_name = Scope::scope_entry_thread_name(id);
+
+            scope_->add(thread_name, ScopeEntry{ new Scope{scope_}, SCOPE });
+            Scope *thread_scope = static_cast<Scope *>(scope_->get(thread_name).value().value_);
+            thread_scope->add(callee->args()[0], ScopeEntry{ arg, OBJECT });
+
+            Interpreter *thread = new Interpreter{ std::move(mod), thread_manager_, thread_scope };
+            thread_manager_->register_interpreter(thread);
         }
         //TODO dict
         if (func_name == "str") {
@@ -563,15 +596,6 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         scope_->update_last_exec_res(resobj);
         return;
     }
-    if (instanceof<Attribute>(code)) {
-        Attribute *attribute = dynamic_cast<Attribute *>(code);
-
-
-        throw std::runtime_error("Interpreter: compound objects currently not supported");
-    }
-    if (instanceof<Subscript>(code)) {
-
-    }
 
     throw std::runtime_error("Interpreter: unexpected expression");
 }
@@ -697,8 +721,9 @@ void yapvm::interpreter::Interpreter::interpret(Node *code) {
 }
 
 
-yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code)
-    : code_{code.steal()}, scope_{new Scope{}}, main_scope_{scope_}, worker_{&Interpreter::__worker_exec, this, code_} {
+yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope)
+    : code_{code.steal()}, scope_{scope}, main_scope_{scope_}, worker_{&Interpreter::__worker_exec, this, code_},
+      thread_manager_{ tm } {
     main_scope_->add(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
 }
 

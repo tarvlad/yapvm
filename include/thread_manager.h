@@ -1,8 +1,8 @@
 #pragma once
-#include "interpreter.h"
-
+#include <vector>
 
 namespace yapvm::interpreter {
+class Interpreter;
 
 // not thread-safe, there can be only one instance in gc
 class ThreadManager {

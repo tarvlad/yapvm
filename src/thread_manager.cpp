@@ -1,4 +1,5 @@
 #include "thread_manager.h"
+#include "interpreter.h"
 
 void yapvm::interpreter::ThreadManager::register_interpreter(Interpreter *interpreter) {
     interpreters_.push_back(interpreter);

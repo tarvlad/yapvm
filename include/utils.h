@@ -91,13 +91,19 @@ public:
         delete ptr_;
     }
 
-    scoped_ptr(const scoped_ptr &) = delete;
+    scoped_ptr(const scoped_ptr &p) : ptr_{ new T{ *p.ptr_ } } {} //TODO???
 
     scoped_ptr(scoped_ptr &&p) noexcept : ptr_{ p.ptr_ } {
         p.ptr_ = nullptr;
     }
 
-    scoped_ptr &operator=(const scoped_ptr &) = delete;
+    scoped_ptr &operator=(const scoped_ptr &p) {
+        if (&p != this) {
+            delete ptr_;
+            ptr_ = new T{ *p.ptr_ };
+        }
+        return *this;
+    }
 
     scoped_ptr &operator=(scoped_ptr &&p) noexcept {
         if (&p != this) {

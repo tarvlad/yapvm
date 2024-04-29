@@ -6,10 +6,10 @@
 #include "ast.h"
 
 #include "scope.h"
+#include "thread_manager.h"
 
 namespace yapvm::interpreter {
 using namespace yapvm::ast;
-
 
 //TODO stack of executing now loops (and functions probably for stacktrace???)
 class Interpreter {
@@ -24,6 +24,8 @@ class Interpreter {
     std::atomic_bool finished_; // todo not atomic?
     std::thread worker_;
 
+    ThreadManager *thread_manager_;
+
     std::stack<ManagedObject *> register_queue_;
 
     void __worker_exec(Module *code);
@@ -35,7 +37,8 @@ class Interpreter {
     void interpret(Node *code);
 
 public:
-    Interpreter(scoped_ptr<Module> &&code);
+    Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope = new Scope{});
+    //TODO constructor from FunctionDef *
     ~Interpreter();
 
     void park();

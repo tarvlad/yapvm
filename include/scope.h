@@ -16,7 +16,7 @@ enum ScopeEntryType {
     FUNCTION,
     SCOPE,
     LABEL,
-    THREAD // TODO implement break, continue via labels
+    THREAD_SCOPE // TODO implement break, continue via labels
 };
 
 
@@ -56,6 +56,7 @@ public:
 
     static std::string scope_entry_function_name(const std::string &name);
     static std::string scope_entry_call_subscope_name(const std::string &name);
+    static std::string scope_entry_thread_name(size_t id);
 
     ManagedObject *get_object(const std::string &name);
     FunctionDef *get_function(const std::string &signature);
