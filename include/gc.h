@@ -18,12 +18,12 @@ using namespace yapvm::interpreter;
 namespace yapvm::ygc {
 
 class YGC {
-    ThreadManager tm_;
+    ThreadManager *tm_;
     Scope *root_;
     std::vector<ManagedObject *> left_{};
     std::vector<ManagedObject *> right_{};
 public:
-    YGC(Scope *root, const ThreadManager &tm) : root_(root), tm_(tm),
+    YGC(Scope *root, ThreadManager *tm) : root_(root), tm_(tm),
     left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()) {
    //     collect();
     };

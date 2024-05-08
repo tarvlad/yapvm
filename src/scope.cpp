@@ -3,6 +3,10 @@
 using namespace yapvm::interpreter;
 
 
+bool yapvm::interpreter::operator==(const ScopeEntry &a, const ScopeEntry &b) {
+    return a.type_ == b.type_ && a.value_ == b.value_;
+}
+
 Scope::Scope() : parent_{ nullptr } {
     scope_.add(lst_exec_res, ScopeEntry{ nullptr, OBJECT });
 }
@@ -73,7 +77,7 @@ std::string Scope::scope_entry_call_subscope_name(const std::string &name) {
 
 
 std::string Scope::scope_entry_thread_name(size_t id) {
-    return "__yapvm_thread_scope_" + id;
+    return "__yapvm_thread_scope_" + std::to_string(id);
 }
 
 

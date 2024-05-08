@@ -25,6 +25,8 @@ struct ScopeEntry {
     ScopeEntryType type_;
 };
 
+bool operator==(const ScopeEntry &a, const ScopeEntry &b);
+
 
 // Scope can't manage FunctionDef and ManagedObject lifetimes; Delegate to gc
 // copy constructor IF NEEDED
@@ -38,6 +40,7 @@ public:
     constexpr static const char *if_scope = "__yapvm_inner_if_scope";
     constexpr static const char *function_ret_label = "__yapvm_inner_function_return_label";
     constexpr static const char *yapvm_thread_func_name = "__yapvm_thread";
+    constexpr static const char *yapvm_thread_join_func_name = "__yapvm_thread_join";
 
     Scope();
     Scope(Scope *parent) : parent_{ parent } {};

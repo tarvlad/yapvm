@@ -8,6 +8,8 @@
 #include "scope.h"
 #include "thread_manager.h"
 
+//TODO add xmx xms
+
 namespace yapvm::interpreter {
 using namespace yapvm::ast;
 

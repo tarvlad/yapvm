@@ -10,6 +10,8 @@ static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 
 #define LAST_EXEC_RES_YOBJ static_cast<ManagedObject *>(scope_->get(Scope::lst_exec_res).value().value_)->value()
 
+//TODO use condvars for wait
+
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
     while (resuming_.load()) {
@@ -445,7 +447,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 throw std::runtime_error("Interpreter: thread first argument should be function name");
             }
             std::string callee_name = dynamic_cast<Name *>(call->args()[0].get())->id();
-            ScopeEntry callee_sce = scope_->name_lookup(callee_name);
+            ScopeEntry callee_sce = scope_->name_lookup(Scope::scope_entry_function_name(callee_name));
             if (callee_sce.type_ != FUNCTION) {
                 throw std::runtime_error("Interpreterer: cannot find function " + callee_name);
             }
@@ -462,7 +464,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             size_t id;
             do {
                 id = GLOBAL_BORN_THREAD_ID.load();
-            } while (GLOBAL_BORN_THREAD_ID.compare_exchange_strong(id, id + 1));
+            } while (!GLOBAL_BORN_THREAD_ID.compare_exchange_strong(id, id + 1));
             std::string thread_name = Scope::scope_entry_thread_name(id);
 
             scope_->change(thread_name, ScopeEntry{ new Scope{scope_}, SCOPE });
@@ -471,6 +473,31 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
 
             Interpreter *thread = new Interpreter{ std::move(mod), thread_manager_, thread_scope };
             thread->launch();
+
+            ManagedObject *resobj = new ManagedObject{
+                new YObject{ "int", new ssize_t{ static_cast<ssize_t>(reinterpret_cast<size_t>(thread)) } }
+            };
+            scope_->update_last_exec_res(resobj);
+            return;
+        }
+        if (func_name == Scope::yapvm_thread_join_func_name) {
+            if (call->args().size() != 1) {
+                throw std::runtime_error("Interpreter: thread join can have only one argument");
+            }
+            interpret_expr(call->args()[0].get());
+
+            YObject *thr_sce_name_object = LAST_EXEC_RES_YOBJ;
+            if (thr_sce_name_object->get_typename() != "int") {
+                throw std::runtime_error("Interpreter: unrecognized thread object");
+            }
+            Interpreter *thread = reinterpret_cast<Interpreter *>(
+                static_cast<size_t>(thr_sce_name_object->get_value_as_int())
+            );
+
+            while (thread_manager_->is_registered(thread)) {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
+            thread_manager_->finish_waiting();
         }
         //TODO dict
         if (func_name == "str") {

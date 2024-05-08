@@ -34,6 +34,7 @@ namespace yapvm::yobjects {
 class ManagedObject;
 
 
+//TODO hierarchy?? enum?? let think (lp)
 class YObject {
     std::string typename_;
     KVStorage<std::string, ManagedObject *> fields_;
@@ -102,7 +103,7 @@ std::vector<ManagedObject *> get_dict_elements(YObject *);
 std::vector<ManagedObject *> get_collection_elements(YObject *);
 
 class ManagedObject {
-    YObject *value_;
+    YObject *value_; //TODO made it Flat
     bool marked_;
 
 public:
