@@ -12,6 +12,18 @@ static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 
 //TODO use condvars for wait
 
+
+// used for thread creation
+static
+std::vector<yapvm::scoped_ptr<Stmt>> copy_vec_no_owning(const std::vector<yapvm::scoped_ptr<Stmt>> &v) {
+    std::vector<yapvm::scoped_ptr<Stmt>> ret;
+    for (const yapvm::scoped_ptr<Stmt> &p : v) {
+        ret.emplace_back(p.get(), false);
+    }
+    return ret;
+}
+
+
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
     while (resuming_.load()) {
@@ -455,11 +467,9 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             if (callee->args().size() != 1) {
                 throw std::runtime_error("Interpreter: thread callee should have only one argument");
             }
-            std::vector<scoped_ptr<Stmt>> new_thread_body = callee->body(); // copy
-            scoped_ptr<Module> mod = new Module{ std::move(new_thread_body) };
 
             interpret_expr(call->args()[1]);
-            YObject *arg = LAST_EXEC_RES_YOBJ;
+            ManagedObject *arg = LAST_EXEC_RES_M_YOBJ;
 
             size_t id;
             do {
@@ -470,8 +480,9 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             scope_->change(thread_name, ScopeEntry{ new Scope{scope_}, SCOPE });
             Scope *thread_scope = static_cast<Scope *>(scope_->get(thread_name).value().value_);
             thread_scope->change(callee->args()[0], ScopeEntry{ arg, OBJECT });
-
-            Interpreter *thread = new Interpreter{ std::move(mod), thread_manager_, thread_scope };
+            Interpreter *thread = new Interpreter{
+                new Module{ copy_vec_no_owning(callee->body()) }, thread_manager_, thread_scope
+            };
             thread->launch();
 
             ManagedObject *resobj = new ManagedObject{
@@ -498,6 +509,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 std::this_thread::sleep_for(std::chrono::microseconds(100));
             }
             thread_manager_->finish_waiting();
+            return;
         }
         //TODO dict
         if (func_name == "str") {
@@ -775,11 +787,10 @@ bool yapvm::interpreter::Interpreter::interpret(Node *code) {
 }
 
 
-yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope)
-    : code_{code.steal()}, scope_{scope}, main_scope_{scope_},
-      thread_manager_{ tm } {
+yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope) :
+    code_{code.steal()}, scope_{scope}, main_scope_{scope_}, thread_manager_{tm} {
     tm->register_interpreter(this);
-    main_scope_->change(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
+    main_scope_->change(Scope::function_ret_label, ScopeEntry{nullptr, LABEL});
 }
 
 

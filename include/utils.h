@@ -83,33 +83,48 @@ size_t cstrsz(const char *str);
 template<typename T>
 class scoped_ptr {
     T *ptr_;
+    bool owner_;
 
 public:
-    scoped_ptr(T *p = nullptr) : ptr_{ p } {}
+    scoped_ptr(T *p = nullptr, bool owner = true) : ptr_{ p }, owner_{ owner } {}
 
     ~scoped_ptr() {
-        delete ptr_;
+        if (owner_) {
+            delete ptr_;
+        }
     }
 
-    scoped_ptr(const scoped_ptr &p) : ptr_{ new T{ *p.ptr_ } } {} //TODO???
+    bool is_owner() const {
+        return owner_;
+    }
 
-    scoped_ptr(scoped_ptr &&p) noexcept : ptr_{ p.ptr_ } {
+    scoped_ptr(const scoped_ptr &p) : ptr_{ new T{ *p.ptr_ } }, owner_{ p.owner_ } {} //TODO???
+
+    scoped_ptr(scoped_ptr &&p) noexcept : ptr_{ p.ptr_ }, owner_{ p.owner_ } {
         p.ptr_ = nullptr;
+        p.owner_ = false;
     }
 
     scoped_ptr &operator=(const scoped_ptr &p) {
         if (&p != this) {
-            delete ptr_;
+            if (owner_) {
+                delete ptr_;
+            }
             ptr_ = new T{ *p.ptr_ };
+            owner_ = p.owner_;
         }
         return *this;
     }
 
     scoped_ptr &operator=(scoped_ptr &&p) noexcept {
         if (&p != this) {
-            delete ptr_;
+            if (owner_) {
+                delete ptr_;
+            }
             ptr_ = p.ptr_;
             p.ptr_ = nullptr;
+            owner_ = p.owner_;
+            p.owner_ = false;
         }
         return *this;
     }

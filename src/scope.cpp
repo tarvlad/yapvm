@@ -111,21 +111,31 @@ std::vector<Scope *> Scope::get_all_children() const {
 }
 
 std::vector<ManagedObject *> yapvm::interpreter::Scope::get_all_objects() const {
-    std::vector<ScopeEntry*> values = scope_.get_live_entries_values();
-    std::vector<ManagedObject*> res;
-    for (auto se : values) {
-        if (se->value_ == nullptr) continue;
+    std::vector<ScopeEntry *> values = scope_.get_live_entries_values();
+    std::vector<ManagedObject *> res;
+    for (auto se: values) {
+        if (se->value_ == nullptr)
+            continue;
 
         if (se->type_ == OBJECT) {
-            res.push_back(static_cast<ManagedObject*>(se->value_));
-        } else if (se->type_ == SCOPE) { 
-            auto scoped_objs = (static_cast<Scope*>(se->value_))->get_all_objects();
+            res.push_back(static_cast<ManagedObject *>(se->value_));
+        } else if (se->type_ == SCOPE) {
+            auto scoped_objs = (static_cast<Scope *>(se->value_))->get_all_objects();
             res.insert(res.end(), scoped_objs.begin(), scoped_objs.end());
         }
-    } 
+    }
     return res;
 }
 
-Scope* Scope::parent() const {
+std::vector<std::pair<std::string, ScopeEntry>> Scope::get_all() const {
+    std::vector<std::pair<std::string *, ScopeEntry *>> all = scope_.get_live_entries();
+    std::vector<std::pair<std::string, ScopeEntry>> ret;
+    for (std::pair<std::string *, ScopeEntry *> &e : all) {
+        ret.emplace_back(*e.first, *e.second);
+    }
+    return ret;
+}
+
+Scope * Scope::parent() const {
     return parent_;
 }

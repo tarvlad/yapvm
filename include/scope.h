@@ -65,7 +65,8 @@ public:
     FunctionDef *get_function(const std::string &signature);
     std::optional<ScopeEntry> get(const std::string &name);
     std::vector<Scope *> get_all_children() const;
-    std::vector<ManagedObject*> get_all_objects() const; 
+    std::vector<ManagedObject*> get_all_objects() const;
+    std::vector<std::pair<std::string, ScopeEntry>> get_all() const;
     Scope *parent() const;
 };
 

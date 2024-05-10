@@ -296,9 +296,7 @@ const scoped_ptr<Expr> &yapvm::ast::ExprStmt::value() const {
 }
 
 
-yapvm::ast::Module::Module(std::vector<scoped_ptr<Stmt>> &&body) 
-    : body_{ std::move(body) } {}
-
+yapvm::ast::Module::Module(std::vector<scoped_ptr<Stmt>> &&body) : body_{std::move(body)} {}
 
 
 const std::vector<scoped_ptr<Stmt>> &yapvm::ast::Module::body() const { return body_; }

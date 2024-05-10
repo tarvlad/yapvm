@@ -322,7 +322,7 @@ public:
         std::vector<std::pair<Key *, Value *>> live_entries;
 	    for (size_t i = 0; i < capacity(); i++) {
 	        if (_data[i].exists && !_data[i].deleted) {
-	            live_entries.emplace_back({ &_data[i].key, &_data[i].value });
+	            live_entries.emplace_back(std::pair{ &_data[i].key, &_data[i].value });
 	        }
 	    }
 	    return live_entries;

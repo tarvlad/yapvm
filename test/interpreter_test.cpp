@@ -52,5 +52,5 @@ TEST(interpreter_test, multithreaded_sum_test) {
     }
     tm.finish_waiting();
     std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_EQ(output, "");
+    EXPECT_EQ(output, "Hello 42");
 }

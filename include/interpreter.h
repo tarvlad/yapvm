@@ -40,7 +40,6 @@ class Interpreter {
 
 public:
     Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope = new Scope{});
-    //TODO constructor from FunctionDef *
     ~Interpreter();
 
     void park();

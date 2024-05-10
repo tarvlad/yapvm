@@ -467,7 +467,7 @@ scoped_ptr<Module> generate_module(const std::string &input, size_t &pos) {
     
     if (input[pos] == ']' && sstrcmp(input, ", type_ignores=[])", pos + 1)) { //empty module
         pos += sizeof(", type_ignores=[])") - 1 + 1;
-        return new Module{ {} };
+        return new Module{ std::vector<scoped_ptr<Stmt>>{} };
     }
 
     std::vector<scoped_ptr<Stmt>> statements;
