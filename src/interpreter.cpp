@@ -639,8 +639,19 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
     }
     if (instanceof<Constant>(code)) {
         Constant *constant = dynamic_cast<Constant *>(code);
-        YObject *c_val = constant->value();
-        ManagedObject *resobj = new ManagedObject{ c_val };
+        YObject *c_val = constant->value(); //TODO bug probably here with double c_val deletion
+        YObject *c_val_cpy = nullptr;
+        if (c_val->get_typename() == "bool") {
+            c_val_cpy = new YObject{ "bool", new bool{ c_val->get_value_as_bool() } };
+        } else if (c_val->get_typename() == "int") {
+            c_val_cpy = new YObject{ "int", new ssize_t{ c_val->get_value_as_int() } };
+        } else if (c_val->get_typename() == "float") {
+            c_val_cpy = new YObject{ "float", new double{ c_val->get_value_as_float() } };
+        } else if (c_val->get_typename() == "string") {
+            c_val_cpy = new YObject{ "string", new std::string{ c_val->get_value_as_string() } };
+        }
+        assert(c_val_cpy != nullptr);
+        ManagedObject *resobj = new ManagedObject{ c_val_cpy };
         register_queue_.push(resobj);
         scope_->update_last_exec_res(resobj);
         return;
