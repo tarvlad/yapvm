@@ -1,4 +1,5 @@
-#import test_resources.yapvm_cpython_thread_support
+#from test_resources.yapvm_cpython_thread_support import __yapvm_thread, __yapvm_thread_join
+
 
 def s(n):
     s = 0
@@ -16,5 +17,7 @@ def p(v):
 
 
 t = __yapvm_thread(p, s(100000))
+w = __yapvm_thread(p, s(100000))
 p((s(100000)))
 __yapvm_thread_join(t)
+__yapvm_thread_join(w)
