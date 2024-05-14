@@ -51,6 +51,8 @@ public:
     bool is_finished() const;
     void join();
 
+    Scope *get_scope() const;
+
     std::vector<yobjects::ManagedObject *> get_register_queue();
 };
 

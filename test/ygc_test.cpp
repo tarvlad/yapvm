@@ -25,7 +25,7 @@ TEST(gc_test, mark_all) {
     scope.add_object("Greeter", obj);    
 
     ThreadManager tm;
-    YGC gc (&scope, tm); 
+    YGC gc (&scope, &tm);
     gc.mark();
 
     EXPECT_TRUE(m_int->is_marked());
@@ -66,7 +66,7 @@ TEST(gc_test, unreacheble) {
     scope.change("list2", *(scope.get("list1")));
 
     ThreadManager tm;
-    YGC gc (&scope, tm); 
+    YGC gc (&scope, &tm);
     gc.mark();
 
     // unreachable object is unmarked
@@ -100,7 +100,7 @@ TEST(gc_test, nested_lists) {
     scope.add_object("list2", list2_obj);    
 
     ThreadManager tm;
-    YGC gc (&scope, tm); 
+    YGC gc (&scope, &tm);
     gc.mark();
 
     EXPECT_TRUE(list2_obj->is_marked());
@@ -135,7 +135,7 @@ TEST(gc_test, cycle_dependency) {
     scope.add_object("l", list_obj);
 
     ThreadManager tm;
-    YGC gc (&scope, tm); 
+    YGC gc (&scope, &tm);
     gc.mark();
 
     EXPECT_TRUE(foo_obj->is_marked());
@@ -146,7 +146,7 @@ TEST(gc_test, sweep) {
     Scope scope;
 
     ThreadManager tm;
-    YGC gc (&scope, tm); 
+    YGC gc (&scope, &tm);
 
     ManagedObject *f_obj = new ManagedObject {constr_yfloat(3.1415)};    
     ManagedObject *a_obj = new ManagedObject {constr_yint(42)};    
@@ -183,12 +183,8 @@ TEST(gc_test, sweep) {
     gc.sweep();
 
     EXPECT_EQ(1, gc.left().size());
-    EXPECT_EQ(42, *(gc.left()[0]->value()->get_value_as_int()));
-
-    
+    EXPECT_EQ(42, gc.left()[0]->value()->get_value_as_int());
 }
-
-
 
 
 

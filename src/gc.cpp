@@ -1,7 +1,10 @@
 #include "gc.h"
+#include <chrono>
 #include <deque>
 #include <thread>
-#include <chrono>
+
+#include "interpreter.h"
+#include "logger.h"
 
 #define sleepns(val) std::this_thread::sleep_for(std::chrono::nanoseconds(val));
 #define sleepms(val) std::this_thread::sleep_for(std::chrono::milliseconds(val));
@@ -60,32 +63,43 @@ std::vector<ManagedObject *> &YGC::left() {
     return left_;
 }
 
+
 void YGC::collect() {
     while (true) {
-        // tm_.park_all();
-        // while (!tm_.is_all_parked()) {
-        //     sleepns(500);
-        // }
+        Logger::log("GC", "gc cycle started, parking all threads...");
+        tm_->park_all();
+        while (!tm_->is_all_parked()) {
+            sleepns(1000);
+        }
+        Logger::log("GC", "all threads parked");
 
-        // std::vector<Interpreter *> interprets = tm_.get_all_interpreters();
+        std::vector<Interpreter *> interprets = tm_->get_all_interpreters();
+        Logger::log("GC", "get " + std::to_string(interprets.size()) + " live interpreters");
+        if (interprets.empty()) {
+            Logger::log("GC", "found no live interpreters, finishing...");
+            tm_->finish_waiting(); // join
+            Logger::log("GC", "all joins finished, exiting...");
+            break;
+        }
 
-        // if (interprets.size() == 0) {
-        //     // tm_.run_all();
-        //     break;
-        // }
-
-        // for (Interpreter * i : interprets) {
-        //     // left_.append_range(i->get_register_queue());
-        // }
+        Logger::log("GC", "registering allocated objects");
+        for (Interpreter *i : interprets) {
+            std::vector<ManagedObject *> register_queue = i->get_register_queue();
+            for (ManagedObject *mo : register_queue) {
+                left_.push_back(mo);
+            }
+        }
         
         if (left_.size() >= GC_CASH_LIMIT) {
+            Logger::log("GC", "GC_CASH_LIMIT over, mark and sweep started...");
             mark();
             sweep();
         }
-        
-        // tm_.run_all();
 
-        sleepms(500);
+        Logger::log("GC", "gc cycle end, running all threads...");
+        tm_->run_all();
+
+        sleepms(1000);
     }
 }
 

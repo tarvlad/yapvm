@@ -41,6 +41,9 @@ set(SOURCE_ALL
 
         include/thread_manager.h
         src/thread_manager.cpp
+
+        include/logger.h
+        src/logger.cpp
 )
 
 

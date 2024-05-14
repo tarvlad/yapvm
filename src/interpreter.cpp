@@ -2,6 +2,8 @@
 #include <chrono>
 #include <cmath>
 
+#include "logger.h"
+
 static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 
 // TODO rewrite as Scope method
@@ -26,6 +28,7 @@ std::vector<yapvm::scoped_ptr<Stmt>> copy_vec_no_owning(const std::vector<yapvm:
 
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
+    //Logger::log("starting interpreter");
     while (resuming_.load()) {
         std::this_thread::sleep_for(std::chrono::nanoseconds{500});
     }
@@ -660,6 +663,17 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
 bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     assert(code != nullptr);
 
+    // here we are in "gc safepoint"
+    if (stopping_.load()) {
+        parked_.store(true);
+        stopping_.store(false);
+        while (!resuming_.load()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
+        }
+        parked_.store(false);
+        resuming_.store(false);
+    }
+
     if (instanceof<Import>(code)) {
         return true; // currently just ignore
     }
@@ -818,8 +832,10 @@ void yapvm::interpreter::Interpreter::launch() {
 bool yapvm::interpreter::Interpreter::is_finished() const { return finished_.load(); }
 
 
-void yapvm::interpreter::Interpreter::join() {
-    worker_.join();
+void yapvm::interpreter::Interpreter::join() { worker_.join(); }
+
+yapvm::interpreter::Scope *yapvm::interpreter::Interpreter::get_scope() const {
+    return scope_;
 }
 
 

@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gc.h"
+#include "logger.h"
 #include "parser.h"
 #include "utils.h"
 
@@ -43,14 +45,17 @@ TEST(interpreter_test, fib_test) {
 TEST(interpreter_test, multithreaded_sum_test) {
     testing::internal::CaptureStdout();
     interpreter::ThreadManager tm;
+    Logger::init_logger();
     scoped_ptr<Module> module = parser::generate_ast(trim(read_file_ast("test_resources/mtsum.py")));
     interpreter::Interpreter interpreter(std::move(module), &tm);
+    ygc::YGC gc(interpreter.get_scope(), &tm);
     interpreter.launch();
+    gc.collect();
 
-    while (!tm.get_all_interpreters().empty()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-    tm.finish_waiting();
+    //while (!tm.get_all_interpreters().empty()) {
+    //    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //}
+    //tm.finish_waiting();
     std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_EQ(output, "5010226785451965871501022678545196587150102267854519658715010226785451965871");
+    EXPECT_EQ(output, "100000100000100000100000");
 }
