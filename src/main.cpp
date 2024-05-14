@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "gc.h"
 #include "interpreter.h"
 #include "logger.h"
 #include "parser.h"
@@ -23,14 +24,16 @@ int main(int argc, char **argv) {
 
     ThreadManager tm;
     Interpreter interpreter(std::move(module), &tm);
+    ygc::YGC gc(interpreter.get_scope(), &tm);
     interpreter.launch();
 
-    //TODO run gc instead of raw wait
-    Logger::log("no-gc wait other threads");
-    while (!tm.get_all_interpreters().empty()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-    tm.finish_waiting();
+    gc.collect();
+
+    //Logger::log("no-gc wait other threads");
+    //while (!tm.get_all_interpreters().empty()) {
+    //    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //}
+    //tm.finish_waiting();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     Logger::log(

@@ -2,6 +2,7 @@
 #include <chrono>
 #include <deque>
 #include <thread>
+#include <unordered_set>
 
 #include "interpreter.h"
 #include "logger.h"
@@ -39,8 +40,26 @@ void YGC::mark() {
     }
 }
 
+static bool is_unique(const std::vector<ManagedObject *> &muobj) {
+    std::unordered_set<ManagedObject *> objs;
+    for (ManagedObject *m : muobj) {
+        if (objs.contains(m)) {
+            return false;
+        }
+        objs.insert(m);
+    }
+    std::unordered_set<YObject *> objs_y;
+    for (ManagedObject *m : muobj) {
+        if (objs_y.contains(m->value())) {
+            return false;
+        }
+        objs_y.insert(m->value());
+    }
+    return true;
+}
 
 void YGC::sweep() {
+    assert(is_unique(left_));
     for (ManagedObject *obj : left_) {
         if (!obj->is_marked()) {
             delete(obj);
