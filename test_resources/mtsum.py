@@ -18,6 +18,8 @@ def p(v):
 
 t = __yapvm_thread(p, s(100000))
 w = __yapvm_thread(p, s(100000))
+x = __yapvm_thread(p, s(100000))
 p((s(100000)))
 __yapvm_thread_join(t)
 __yapvm_thread_join(w)
+__yapvm_thread_join(x)

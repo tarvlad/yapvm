@@ -52,5 +52,5 @@ TEST(interpreter_test, multithreaded_sum_test) {
     }
     tm.finish_waiting();
     std::string output = testing::internal::GetCapturedStdout();
-    EXPECT_EQ(output, "501022678545196587150102267854519658715010226785451965871");
+    EXPECT_EQ(output, "5010226785451965871501022678545196587150102267854519658715010226785451965871");
 }
