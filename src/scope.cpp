@@ -136,6 +136,6 @@ std::vector<std::pair<std::string, ScopeEntry>> Scope::get_all() const {
     return ret;
 }
 
-Scope * Scope::parent() const {
+Scope *Scope::parent() const {
     return parent_;
 }

@@ -51,10 +51,10 @@ void yapvm::interpreter::ThreadManager::run_all() {
     std::scoped_lock lock{ monitor_ };
     for (Interpreter *i: interpreters_) {
         i->run();
-        while (i->is_parked())
-            ;
+        while (i->is_parked());
     }
 }
+
 
 void yapvm::interpreter::ThreadManager::finish_waiting() {
     std::scoped_lock lock{ monitor_ };
@@ -64,6 +64,7 @@ void yapvm::interpreter::ThreadManager::finish_waiting() {
         beg->join();
     }
 }
+
 
 bool yapvm::interpreter::ThreadManager::is_registered(Interpreter *interpreter) {
     std::scoped_lock lock{ monitor_ };

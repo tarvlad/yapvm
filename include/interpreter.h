@@ -18,9 +18,9 @@ class Interpreter {
     Module *code_;
     Scope *scope_; // it is a current working scope
     Scope *main_scope_; // main scope for current interpreter, there can be other scopes
-    std::atomic_bool stopping_ = false; // can be set to true only from caller thread, to false only from callee
-    std::atomic_bool parked_ = false; // can be modified only from callee thread
-    std::atomic_bool resuming_ = false; // can be set to true only from caller thread, to false only from callee
+    std::atomic_bool parked_ = false;
+    std::atomic_bool need_unpark_ = false;
+    std::atomic_bool need_park_ = false;
 
     std::atomic_bool finishing_ = false;
     std::atomic_bool finished_ = false; // todo not atomic?
@@ -37,6 +37,8 @@ class Interpreter {
     bool interpret_stmt(Stmt *code);
 
     bool interpret(Node *code);
+
+    void handle_safepoint();
 
 public:
     Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope = new Scope{});

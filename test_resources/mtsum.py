@@ -8,18 +8,29 @@ def s(n):
     return i
 
 
-def p(v):
-    print(str(v))
+def p(n):
+    print(str(s(n)))
     return
 
 
-t = __yapvm_thread(p, s(100000))
-#__yapvm_thread_join(t)
-w = __yapvm_thread(p, s(100000))
-#__yapvm_thread_join(w)
-x = __yapvm_thread(p, s(100000))
-#__yapvm_thread_join(x)
-p((s(100000)))
-__yapvm_thread_join(t)
-__yapvm_thread_join(w)
-__yapvm_thread_join(x)
+threaded = False
+n = 100000
+
+t1 = __yapvm_thread(p, n)
+if not threaded:
+    __yapvm_thread_join(t1)
+
+t2 = __yapvm_thread(p, n)
+if not threaded:
+    __yapvm_thread_join(t2)
+
+t3 = __yapvm_thread(p, n)
+if not threaded:
+    __yapvm_thread_join(t3)
+
+p(n)
+
+if threaded:
+    __yapvm_thread_join(t1)
+    __yapvm_thread_join(t2)
+    __yapvm_thread_join(t3)

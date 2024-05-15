@@ -15,6 +15,19 @@ static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 //TODO use condvars for wait
 
 
+void yapvm::interpreter::Interpreter::handle_safepoint() {
+    if (need_park_.load()) {
+        need_park_.store(false);
+        parked_.store(true);
+        while (!need_unpark_.load()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
+        }
+        parked_.store(false);
+        need_unpark_.store(false);
+    }
+}
+
+
 // used for thread creation
 static
 std::vector<yapvm::scoped_ptr<Stmt>> copy_vec_no_owning(const std::vector<yapvm::scoped_ptr<Stmt>> &v) {
@@ -29,9 +42,6 @@ std::vector<yapvm::scoped_ptr<Stmt>> copy_vec_no_owning(const std::vector<yapvm:
 // SHOULD be called only once when interpreter starts
 void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
     //Logger::log("starting interpreter");
-    while (resuming_.load()) {
-        std::this_thread::sleep_for(std::chrono::nanoseconds{500});
-    }
 
     for (const scoped_ptr<Stmt> &i: code->body()) {
         if (!interpret(i)) {
@@ -41,13 +51,8 @@ void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
             break;
         }
     }
-    finishing_.store(true);
-    resuming_.store(false);
-    parked_.store(true);
-    stopping_.store(false);
-    finished_.store(true);
-    finishing_.store(false);
     thread_manager_->unregister_interpreter(this);
+    handle_safepoint();
 }
 
 
@@ -510,6 +515,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
 
             while (thread_manager_->is_registered(thread)) {
                 std::this_thread::sleep_for(std::chrono::microseconds(100));
+                handle_safepoint();
             }
             thread_manager_->finish_waiting();
             return;
@@ -673,17 +679,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
 
 bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     assert(code != nullptr);
-
-    // here we are in "gc safepoint"
-    if (stopping_.load()) {
-        parked_.store(true);
-        stopping_.store(false);
-        while (!resuming_.load()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(50));
-        }
-        parked_.store(false);
-        resuming_.store(false);
-    }
+    handle_safepoint();
 
     if (instanceof<Import>(code)) {
         return true; // currently just ignore
@@ -822,7 +818,7 @@ yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadMa
 yapvm::interpreter::Interpreter::~Interpreter() { delete code_; }
 
 
-void yapvm::interpreter::Interpreter::park() { stopping_.store(true); }
+void yapvm::interpreter::Interpreter::park() { need_park_.store(true); }
 
 
 bool yapvm::interpreter::Interpreter::is_parked() const {
@@ -831,9 +827,7 @@ bool yapvm::interpreter::Interpreter::is_parked() const {
 
 
 void yapvm::interpreter::Interpreter::run() {
-    while (stopping_.load()) {
-    } // wait while thread parks
-    resuming_.store(true); // all {stopping <- true} actions should hb {resuming <- true} actions
+    need_unpark_.store(true);
 }
 
 void yapvm::interpreter::Interpreter::launch() {
