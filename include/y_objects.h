@@ -103,14 +103,13 @@ std::vector<ManagedObject *> get_dict_elements(YObject *);
 std::vector<ManagedObject *> get_collection_elements(YObject *);
 
 class ManagedObject {
-    YObject *value_; //TODO made it Flat
+    YObject value_;
     bool marked_;
 
 public:
     ManagedObject(YObject *value);
-    ~ManagedObject();
 
-    YObject *value() const;
+    YObject *value();
     bool is_marked() const;
 
     void mark();
