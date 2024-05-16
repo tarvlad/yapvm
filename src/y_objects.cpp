@@ -1,8 +1,16 @@
 #include "y_objects.h"
 
+#include <string>
+#include <utility>
 #include "parser.h"
 #include "utils.h"
-#include <string>
+
+
+yapvm::yobjects::YObject::YObject(std::string type_name, void *value, KVStorage<std::string, ManagedObject *> *fields,
+                                  KVStorage<std::string, ast::FunctionDef *> *methods)
+                                      : typename_{std::move( type_name)}, ___yapvm_objval_{ value }, fields_{ fields }, methods_{ methods } {
+
+}
 
 
 yapvm::yobjects::YObject::YObject(std::string type_name) : typename_{std::move(type_name)}, ___yapvm_objval_{ nullptr }, fields_{ nullptr }, methods_{ nullptr } {}
@@ -41,6 +49,19 @@ yapvm::yobjects::YObject::~YObject() {
         delete static_cast<KVStorage<ManagedObject *, ManagedObject *> *>(___yapvm_objval_);
         return;
     }
+}
+
+
+yapvm::yobjects::YObject yapvm::yobjects::YObject::steal_personality() noexcept {
+    std::string tn = std::move(typename_);
+    KVStorage<std::string, ManagedObject *> *fields = fields_;
+    KVStorage<std::string, ast::FunctionDef *> *methods = methods_;
+    void *objval = ___yapvm_objval_;
+    fields_ = nullptr;
+    methods_ = nullptr;
+    ___yapvm_objval_ = nullptr;
+
+    return {tn, objval, fields, methods};
 }
 
 
@@ -248,8 +269,7 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ydict() {
 }
 
 
-yapvm::yobjects::ManagedObject::ManagedObject(YObject *value) : value_{*value}, marked_{false} {
-    value->set____yapvm_objval_(nullptr);
+yapvm::yobjects::ManagedObject::ManagedObject(YObject *value) : value_{value->steal_personality()}, marked_{false} {
     delete value;
 }
 
@@ -267,8 +287,7 @@ void yapvm::yobjects::ManagedObject::unmark() { marked_ = false; }
 
 
 void yapvm::yobjects::ManagedObject::set_value(YObject *value) {
-    value_ = *value;
-    value->set____yapvm_objval_(nullptr);
+    value_ = value->steal_personality();
     delete value;
 }
 

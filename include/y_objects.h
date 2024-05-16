@@ -41,11 +41,15 @@ class YObject {
     KVStorage<std::string, ast::FunctionDef *> *methods_;
     void *___yapvm_objval_; // reinterpret_cast for usage, yes yes very bad gcc-style type erasure
 
+    YObject(std::string type_name, void *value, KVStorage<std::string, ManagedObject *> *fields, KVStorage<std::string, ast::FunctionDef *> *methods);
+
 public:
     YObject(std::string type_name);
     YObject(std::string type_name, void *value);
 
     ~YObject();
+
+    YObject steal_personality() noexcept;
 
     const std::string &get_typename() const { return typename_; }
 
