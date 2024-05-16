@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     gc.collect();
 
     //Logger::log("no-gc wait other threads");
-    //while (!tm.get_all_interpreters().empty()) {
+    //while (!tm.get_all_interpreters().value().empty()) {
     //    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     //}
     //tm.finish_waiting();

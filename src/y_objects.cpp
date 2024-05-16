@@ -248,15 +248,13 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ydict() {
 }
 
 
-yapvm::yobjects::ManagedObject::ManagedObject(YObject *value) : value_{value}, marked_{false} {}
-
-
-yapvm::yobjects::ManagedObject::~ManagedObject() {
-    delete value_;
+yapvm::yobjects::ManagedObject::ManagedObject(YObject *value) : value_{*value}, marked_{false} {
+    value->set____yapvm_objval_(nullptr);
+    delete value;
 }
 
 
-yapvm::yobjects::YObject *yapvm::yobjects::ManagedObject::value() const { return value_; }
+yapvm::yobjects::YObject *yapvm::yobjects::ManagedObject::value() { return &value_; }
 
 
 bool yapvm::yobjects::ManagedObject::is_marked() const { return marked_; }
@@ -268,7 +266,11 @@ void yapvm::yobjects::ManagedObject::mark() { marked_ = true; }
 void yapvm::yobjects::ManagedObject::unmark() { marked_ = false; }
 
 
-void yapvm::yobjects::ManagedObject::set_value(YObject *value) { value_ = value; }
+void yapvm::yobjects::ManagedObject::set_value(YObject *value) {
+    value_ = *value;
+    value->set____yapvm_objval_(nullptr);
+    delete value;
+}
 
 
 size_t yapvm::yobjects::managed_yobject_hash(ManagedObject *o) {
