@@ -17,10 +17,10 @@ TEST(interpreter_test, arithmetic) {
     interpreter::Interpreter interpreter(std::move(module), &tm);
     interpreter.launch();
 
-    while (!tm.get_all_interpreters().empty()) {
+    while (!tm.get_all_interpreters().value().empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    tm.finish_waiting();
+    while (!tm.finish_waiting());
     std::string output = testing::internal::GetCapturedStdout();
     EXPECT_EQ(output, "96 138 -729");
 }
@@ -33,10 +33,10 @@ TEST(interpreter_test, fib_test) {
     interpreter::Interpreter interpreter(std::move(module), &tm);
     interpreter.launch();
 
-    while (!tm.get_all_interpreters().empty()) {
+    while (!tm.get_all_interpreters().value().empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    tm.finish_waiting();
+    while (!tm.finish_waiting());
     std::string output = testing::internal::GetCapturedStdout();
     EXPECT_EQ(output, "4181");
 }

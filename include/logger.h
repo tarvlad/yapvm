@@ -15,6 +15,8 @@ public:
     static void log(std::string msg);
 
     static void log(std::string who, std::string msg);
+
+    static void log(std::string who, std::string where, std::string msg);
 };
 
 }

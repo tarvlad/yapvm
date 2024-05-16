@@ -17,8 +17,8 @@ static std::atomic_size_t GLOBAL_BORN_THREAD_ID = 71;
 
 void yapvm::interpreter::Interpreter::handle_safepoint() {
     if (need_park_.load()) {
-        need_park_.store(false);
         parked_.store(true);
+        need_park_.store(false);
         while (!need_unpark_.load()) {
             std::this_thread::sleep_for(std::chrono::microseconds(50));
         }
@@ -51,8 +51,9 @@ void yapvm::interpreter::Interpreter::__worker_exec(Module *code) {
             break;
         }
     }
-    thread_manager_->unregister_interpreter(this);
-    handle_safepoint();
+    while (!thread_manager_->unregister_interpreter(this)) {
+        handle_safepoint();
+    }
 }
 
 
@@ -497,6 +498,13 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 new YObject{ "int", new ssize_t{ static_cast<ssize_t>(reinterpret_cast<size_t>(thread)) } }
             };
             scope_->update_last_exec_res(resobj);
+            Logger::log("Interpreter",
+                "created and launched new thread with interpreter ["
+                + std::to_string(reinterpret_cast<size_t>(thread))
+                + "] from interpreter ["
+                + std::to_string(reinterpret_cast<size_t>(this))
+                + "]"
+            );
             return;
         }
         if (func_name == Scope::yapvm_thread_join_func_name) {
@@ -513,11 +521,35 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 static_cast<size_t>(thr_sce_name_object->get_value_as_int())
             );
 
-            while (thread_manager_->is_registered(thread)) {
-                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            Logger::log("Interpreter",
+                "waiting to join thread with interpreter ["
+                + std::to_string(reinterpret_cast<size_t>(thread))
+                + "] from interpreter ["
+                + std::to_string(reinterpret_cast<size_t>(this))
+                + "]"
+            );
+            std::optional<bool> is_thread_registered_opt = thread_manager_->is_registered(thread);
+            while (true) {
+                if (is_thread_registered_opt.has_value()) {
+                    if (!is_thread_registered_opt.value()) {
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                }
+                is_thread_registered_opt = thread_manager_->is_registered(thread);
                 handle_safepoint();
             }
-            thread_manager_->finish_waiting();
+            while (!thread_manager_->finish_waiting()) {
+                handle_safepoint();
+            }
+            handle_safepoint();
+            Logger::log("Interpreter",
+                "joined thread with interpreter ["
+                + std::to_string(reinterpret_cast<size_t>(thread))
+                + "] from interpreter ["
+                + std::to_string(reinterpret_cast<size_t>(this))
+                + "]"
+            );
             return;
         }
         //TODO dict
@@ -800,7 +832,6 @@ bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
 
 bool yapvm::interpreter::Interpreter::interpret(Node *code) {
     assert(code != nullptr);
-    //TODO check and park (handle unpark too)
     if (instanceof<Stmt>(code)) {
         return interpret_stmt(dynamic_cast<Stmt *>(code));
     }
@@ -810,8 +841,10 @@ bool yapvm::interpreter::Interpreter::interpret(Node *code) {
 
 yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope) :
     code_{code.steal()}, scope_{scope}, main_scope_{scope_}, thread_manager_{tm} {
-    tm->register_interpreter(this);
     main_scope_->change(Scope::function_ret_label, ScopeEntry{nullptr, LABEL});
+    while (!tm->register_interpreter(this)) {
+        handle_safepoint();
+    }
 }
 
 

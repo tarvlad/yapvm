@@ -31,7 +31,16 @@ void yapvm::Logger::log(std::string msg) {
 
 void yapvm::Logger::log(std::string who, std::string msg) {
     if (enabled && out.is_open()) {
-        std::string log_msg = std::string("YAPVM (thread ") + thread_id_str() + std::string("): ") + "[" + std::move(who) + "]: " + std::move(msg);
+        std::string log_msg = std::string("YAPVM (thread ") + thread_id_str() + std::string("): ") + "[" +
+                              std::move(who) + "]: " + std::move(msg);
+        out << log_msg << std::endl;
+    }
+}
+
+void yapvm::Logger::log(std::string who, std::string where, std::string msg) {
+    if (enabled && out.is_open()) {
+        std::string log_msg = std::string("YAPVM (thread ") + thread_id_str() + std::string("): ") + "[" +
+                              std::move(who) + "][" + std::move(where) + "]: " + std::move(msg);
         out << log_msg << std::endl;
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <deque>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 namespace yapvm::interpreter {
@@ -13,16 +14,16 @@ class ThreadManager {
     std::deque<Interpreter *> join_queue_;
 
 public:
-    void register_interpreter(Interpreter *interpreter); //TODO add mutex
-    void unregister_interpreter(Interpreter *interpreter);
+    bool register_interpreter(Interpreter *interpreter);
+    bool unregister_interpreter(Interpreter *interpreter);
 
-    std::vector<Interpreter *> get_all_interpreters();
-    void park_all();
-    bool is_all_parked();
-    void run_all();
+    std::optional<std::vector<Interpreter *>> get_all_interpreters();
+    bool park_all();
+    std::optional<bool> is_all_parked();
+    bool run_all();
 
-    void finish_waiting();
-    bool is_registered(Interpreter *);
+    bool finish_waiting();
+    std::optional<bool> is_registered(Interpreter *);
 };
 
 }

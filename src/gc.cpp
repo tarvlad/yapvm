@@ -86,17 +86,33 @@ std::vector<ManagedObject *> &YGC::left() {
 void YGC::collect() {
     while (true) {
         Logger::log("GC", "gc cycle started, parking all threads...");
-        tm_->park_all();
-        while (!tm_->is_all_parked()) {
-            sleepns(1000);
+        while (!tm_->park_all());
+        std::optional<bool> is_all_parked_opt = tm_->is_all_parked();
+        while (true) {
+            if (is_all_parked_opt.has_value()) {
+                if (!is_all_parked_opt.value()) {
+                    sleepns(1000);
+                } else {
+                    break;
+                }
+            }
+            is_all_parked_opt = tm_->is_all_parked();
         }
         Logger::log("GC", "all threads parked");
 
-        std::vector<Interpreter *> interprets = tm_->get_all_interpreters();
+        std::vector<Interpreter *> interprets;
+        std::optional opt_interprets = tm_->get_all_interpreters();
+        while (true) {
+            if (opt_interprets.has_value()) {
+                interprets = opt_interprets.value();
+                break;
+            }
+            opt_interprets = tm_->get_all_interpreters();
+        }
         Logger::log("GC", "get " + std::to_string(interprets.size()) + " live interpreters");
         if (interprets.empty()) {
             Logger::log("GC", "found no live interpreters, finishing...");
-            tm_->finish_waiting(); // join
+            while (!tm_->finish_waiting()); // join
             Logger::log("GC", "all joins finished, exiting...");
             break;
         }
@@ -116,7 +132,7 @@ void YGC::collect() {
         }
 
         Logger::log("GC", "gc cycle end, running all threads...");
-        tm_->run_all();
+        while (!tm_->run_all());
 
         sleepms(1000);
     }

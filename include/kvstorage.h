@@ -41,7 +41,9 @@ class KVStorage {
 	static_assert(ReduceDeletedPercentage < 50);
 
 	//near to 2^32
-	constexpr static std::array<size_t, 26> _capacities = {
+	constexpr static std::array<size_t, 28> _capacities = {
+	    7,
+	    17,
 		53,
 		97,
 		193,

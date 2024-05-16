@@ -5,13 +5,15 @@
 #include <string>
 
 
-yapvm::yobjects::YObject::YObject(std::string type_name) : typename_{std::move(type_name)}, ___yapvm_objval_{ nullptr } {}
+yapvm::yobjects::YObject::YObject(std::string type_name) : typename_{std::move(type_name)}, ___yapvm_objval_{ nullptr }, fields_{ nullptr }, methods_{ nullptr } {}
 
 
-yapvm::yobjects::YObject::YObject(std::string type_name, void *value) : typename_{ std::move(type_name) }, ___yapvm_objval_{ value } {}
+yapvm::yobjects::YObject::YObject(std::string type_name, void *value) : typename_{ std::move(type_name) }, ___yapvm_objval_{ value }, fields_{ nullptr }, methods_{ nullptr } {}
 
 
 yapvm::yobjects::YObject::~YObject() {
+    delete fields_;
+    delete methods_;
     if (___yapvm_objval_ == nullptr) {
         return;
     }
@@ -43,18 +45,27 @@ yapvm::yobjects::YObject::~YObject() {
 
 
 void yapvm::yobjects::YObject::add_field(std::string name, ManagedObject *field) {
-    fields_.add(std::move(name), field);
+    if (fields_ == nullptr) {
+        fields_ = new KVStorage<std::string, ManagedObject *>;
+    }
+    fields_->add(std::move(name), field);
 }
 
 
 void yapvm::yobjects::YObject::add_method(std::string name, ast::FunctionDef *method) {
-    methods_.add(std::move(name), method);
+    if (methods_ == nullptr) {
+        methods_ = new KVStorage<std::string, ast::FunctionDef *>;
+    }
+    methods_->add(std::move(name), method);
 }
 
 
 yapvm::yobjects::ManagedObject *yapvm::yobjects::YObject::get_field(const std::string &name) {
     using kv_value_t = std::reference_wrapper<ManagedObject *>;
-    if (std::optional<kv_value_t> field = fields_[name]; field.has_value()) {
+    if (fields_ == nullptr) {
+        return nullptr;
+    }
+    if (std::optional<kv_value_t> field = (*fields_)[name]; field.has_value()) {
         return field.value().get();
     }
     return nullptr;
@@ -63,7 +74,10 @@ yapvm::yobjects::ManagedObject *yapvm::yobjects::YObject::get_field(const std::s
 
 yapvm::ast::FunctionDef *yapvm::yobjects::YObject::get_method(const std::string &name) {
     using kv_value_t = std::reference_wrapper<ast::FunctionDef *>;
-    if (std::optional<kv_value_t> field = methods_[name]; field.has_value()) {
+    if (methods_ == nullptr) {
+        return nullptr;
+    }
+    if (std::optional<kv_value_t> field = (*methods_)[name]; field.has_value()) {
         return field.value().get();
     }
     return nullptr;
@@ -71,12 +85,18 @@ yapvm::ast::FunctionDef *yapvm::yobjects::YObject::get_method(const std::string 
 
 
 std::vector<std::string *> yapvm::yobjects::YObject::get_methods_names() const {
-    return methods_.get_live_entries_keys();
+    if (methods_ == nullptr) {
+        return {};
+    }
+    return methods_->get_live_entries_keys();
 }
 
 
 std::vector<std::string *> yapvm::yobjects::YObject::get_fields_names() const {
-    return fields_.get_live_entries_keys();
+    if (fields_ == nullptr) {
+        return {};
+    }
+    return fields_->get_live_entries_keys();
 }
 
 std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::YObject::get_fields() {
@@ -157,7 +177,7 @@ yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist() {
 }
 
 
-yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist(std::vector<yapvm::yobjects::ManagedObject *> *vec) {
+yapvm::yobjects::YObject *yapvm::yobjects::constr_ylist(std::vector<ManagedObject *> *vec) {
     return new YObject{"list", vec};
 }
 
@@ -173,23 +193,23 @@ bool yapvm::yobjects::is_collection(yapvm::yobjects::YObject * yobj) {
 } 
 
 
-std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_list_elements(yapvm::yobjects::YObject *yobj) {
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_list_elements(YObject *yobj) {
     // TODO maybe add checks or hide this function
-    return *static_cast<std::vector<yapvm::yobjects::ManagedObject *> *>(yobj->get____yapvm_objval_());
+    return *static_cast<std::vector<ManagedObject *> *>(yobj->get____yapvm_objval_());
 }
 
 std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_dict_elements(yapvm::yobjects::YObject *yobj) {
     // TODO maybe add checks or hide this function
-    KVStorage<yapvm::yobjects::ManagedObject *, yapvm::yobjects::ManagedObject *> *dict = static_cast<KVStorage<yapvm::yobjects::ManagedObject *, yapvm::yobjects::ManagedObject *> *>(yobj->get____yapvm_objval_());
+    KVStorage<ManagedObject *, ManagedObject *> *dict = static_cast<KVStorage<ManagedObject *, ManagedObject *> *>(yobj->get____yapvm_objval_());
     // TODO 
-    std::vector<yapvm::yobjects::ManagedObject **> values = dict->get_live_entries_values();
-    std::vector<yapvm::yobjects::ManagedObject **> keys = dict->get_live_entries_keys();
-    std::vector<yapvm::yobjects::ManagedObject *> res{keys.size() + values.size()};
+    std::vector<ManagedObject **> values = dict->get_live_entries_values();
+    std::vector<ManagedObject **> keys = dict->get_live_entries_keys();
+    std::vector<ManagedObject *> res{keys.size() + values.size()};
 
-    for (yapvm::yobjects::ManagedObject **val : values) {
+    for (ManagedObject **val : values) {
         res.push_back(*val);
     }
-    for (yapvm::yobjects::ManagedObject **key : keys) {
+    for (ManagedObject **key : keys) {
         res.push_back(*key);
     }
     
@@ -197,7 +217,7 @@ std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_dict_elements
 }
 
 
-std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_collection_elements(yapvm::yobjects::YObject *yobj) {
+std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_collection_elements(YObject *yobj) {
     // TODO maybe add checks
     if (yobj->get_typename() == "list") {
         return get_list_elements(yobj);
@@ -205,12 +225,12 @@ std::vector<yapvm::yobjects::ManagedObject *> yapvm::yobjects::get_collection_el
     if (yobj->get_typename() == "dict") {
         return get_dict_elements(yobj);
     }
-    return std::vector<yapvm::yobjects::ManagedObject *> { };
+    return std::vector<ManagedObject *> { };
 }
 
 struct __yobj_hash {
     size_t operator()(yapvm::yobjects::ManagedObject *o) const {
-        return yapvm::yobjects::managed_yobject_hash(o);
+        return managed_yobject_hash(o);
     }
 };
 

@@ -37,8 +37,8 @@ class ManagedObject;
 //TODO hierarchy?? enum?? let think (lp)
 class YObject {
     std::string typename_;
-    KVStorage<std::string, ManagedObject *> fields_;
-    KVStorage<std::string, ast::FunctionDef *> methods_;
+    KVStorage<std::string, ManagedObject *> *fields_;
+    KVStorage<std::string, ast::FunctionDef *> *methods_;
     void *___yapvm_objval_; // reinterpret_cast for usage, yes yes very bad gcc-style type erasure
 
 public:
