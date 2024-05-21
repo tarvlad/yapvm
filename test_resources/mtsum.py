@@ -13,7 +13,7 @@ def p(n):
     return
 
 
-threaded = True
+threaded = False
 n = 100000
 
 t1 = __yapvm_thread(p, n)

@@ -75,6 +75,8 @@ public:
 
     std::string get_value_as_string() const;
 
+    const std::vector<ManagedObject *> &get_value_as_list() const;
+
     double get_value_as_float() const;
 
     ssize_t get_value_as_int() const;
@@ -86,6 +88,16 @@ public:
     void set_value_as_float(double value) const;
 
     void set_value_as_int(ssize_t value) const;
+
+    void set_value_as_list(std::vector<ManagedObject *> vec) const;
+
+    ManagedObject *get_list_element(size_t idx) const;
+
+    void set_list_element(size_t idx, ManagedObject *obj) const;
+
+    void add_list_element(ManagedObject *obj) const;
+
+    size_t get_len_as_list() const;
 };
 
 

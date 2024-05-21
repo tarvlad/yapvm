@@ -142,6 +142,10 @@ std::string yapvm::yobjects::YObject::get_value_as_string() const {
     return *static_cast<std::string *>(___yapvm_objval_);
 }
 
+const std::vector<yapvm::yobjects::ManagedObject *> &yapvm::yobjects::YObject::get_value_as_list() const {
+    return *static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_);
+}
+
 
 double yapvm::yobjects::YObject::get_value_as_float() const { return *static_cast<double *>(___yapvm_objval_); }
 
@@ -149,7 +153,9 @@ double yapvm::yobjects::YObject::get_value_as_float() const { return *static_cas
 ssize_t yapvm::yobjects::YObject::get_value_as_int() const { return *static_cast<ssize_t *>(___yapvm_objval_); }
 
 
-void yapvm::yobjects::YObject::set_value_as_bool(bool value) const { *static_cast<bool *>(___yapvm_objval_) = value; }
+void yapvm::yobjects::YObject::set_value_as_bool(bool value) const {
+    *static_cast<bool *>(___yapvm_objval_) = value;
+}
 
 
 void yapvm::yobjects::YObject::set_value_as_string(std::string value) const {
@@ -162,6 +168,27 @@ void yapvm::yobjects::YObject::set_value_as_float(double value) const {
 
 void yapvm::yobjects::YObject::set_value_as_int(ssize_t value) const {
     *static_cast<ssize_t *>(___yapvm_objval_) = value;
+}
+
+void yapvm::yobjects::YObject::set_value_as_list(std::vector<ManagedObject *> vec) const {
+    *static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_) = std::move(vec);
+}
+
+yapvm::yobjects::ManagedObject *yapvm::yobjects::YObject::get_list_element(size_t idx) const {
+    return static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_)->at(idx);
+}
+
+void yapvm::yobjects::YObject::set_list_element(size_t idx, ManagedObject *obj) const {
+    static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_)->at(idx) = obj;
+}
+
+void yapvm::yobjects::YObject::add_list_element(ManagedObject *obj) const {
+    std::vector<ManagedObject *> *list = static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_);
+    list->push_back(obj);
+}
+
+size_t yapvm::yobjects::YObject::get_len_as_list() const {
+    return static_cast<std::vector<ManagedObject *> *>(___yapvm_objval_)->size();
 }
 
 

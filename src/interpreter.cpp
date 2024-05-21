@@ -1,3 +1,12 @@
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!! README !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// This is very straightforward stupid
+// implementation of interpreter with c-style dispatch
+// and othed unoptimized things.
+// It WILL be rewritten
+//
+// Any questions please send to tarvlad@inbox.ru
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #include "interpreter.h"
 #include <chrono>
 #include <cmath>
@@ -703,6 +712,32 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         scope_->update_last_exec_res(static_cast<ManagedObject *>(n_sce.value_));
         return;
     }
+    if (instanceof<Subscript>(code)) {
+        Subscript *subscript = dynamic_cast<Subscript *>(code);
+
+        interpret_expr(subscript->value());
+        YObject *value = LAST_EXEC_RES_YOBJ;
+        if (value->get_typename() != "list") {
+            throw std::runtime_error("Interpreter: Subscript currently supported only for lists");
+        }
+
+        interpret_expr(subscript->key());
+        YObject *key = LAST_EXEC_RES_YOBJ;
+        if (key->get_typename() != "int") {
+            throw std::runtime_error("Interpreter: Subscript key for list should be int");
+        }
+
+        ssize_t key_v = key->get_value_as_int();
+        if (std::abs(key_v) >= value->get_len_as_list()) {
+            throw std::runtime_error("Interpreter: list index out of range");
+        }
+        if (key_v < 0) {
+            key_v = static_cast<ssize_t>(key->get_len_as_list()) - key_v;
+        }
+        ManagedObject *element = value->get_list_element(key_v);
+        scope_->update_last_exec_res(element); // TODO check
+        return;
+    }
     //TODO attribute, subscript
 
     throw std::runtime_error("Interpreter: unexpected expression");
@@ -749,18 +784,56 @@ bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
         return false;
     }
     if (instanceof<Assign>(code)) {
+        //TODO add assign to subscript
         Assign *assign = dynamic_cast<Assign *>(code);
-        if (assign->target().size() != 1 || !instanceof<Name>(assign->target()[0].get())) {
+        if (assign->target().size() != 1 || (!instanceof<Name>(assign->target()[0].get()) && !instanceof<Subscript>(assign->target()[0].get()))) {
             throw std::runtime_error("Interpreter: currently can assign only to single Name");
         }
-        Name *target = dynamic_cast<Name *>(assign->target()[0].get());
-        assert(target != nullptr);
-        interpret_expr(assign->value());
-        scope_->store_last_exec_res(target->id());
+        if (instanceof<Name>(assign->target()[0].get())) {
+            Name *target = dynamic_cast<Name *>(assign->target()[0].get());
+            assert(target != nullptr);
+            interpret_expr(assign->value());
+            scope_->store_last_exec_res(target->id());
+        } else if (instanceof<Subscript>(assign->target()[0].get())) {
+            Subscript *subscript = dynamic_cast<Subscript *>(assign->target()[0].get());
+            assert(subscript != nullptr);
+
+            interpret_expr(subscript->value());
+            YObject *value = LAST_EXEC_RES_YOBJ;
+            if (value->get_typename() != "list") {
+                throw std::runtime_error("Interpreter: currently can assign only to list subscript");
+            }
+            interpret_expr(subscript->key());
+            YObject *key = LAST_EXEC_RES_YOBJ;
+            if (key->get_typename() != "int") {
+                throw std::runtime_error("Interpreter: list subscript key should be int");
+            }
+            size_t idx = static_cast<size_t>(key->get_value_as_int());
+
+            interpret_expr(assign->value());
+            ManagedObject *assignee = LAST_EXEC_RES_M_YOBJ;
+            value->set_list_element(idx, assignee);
+            scope_->update_last_exec_res(assignee);
+        }
         return true;
     }
     if (instanceof<AugAssign>(code)) {
-        throw std::runtime_error("Interpreter: currently AugAssign is not supported");
+        AugAssign *aug_assign = dynamic_cast<AugAssign *>(code);
+
+        interpret_expr(aug_assign->target());
+        YObject *target = LAST_EXEC_RES_YOBJ;
+        if (target->get_typename() != "list") {
+            throw std::runtime_error("Interpreter: currently AugAssign supported only for lists");
+        }
+        if (dynamic_cast<Add *>(aug_assign->op().get()) == nullptr) {
+            throw std::runtime_error("Interpreter: currently AugAssign for lists supported only for Add");
+        }
+
+        interpret_expr(aug_assign->value());
+        ManagedObject *value = LAST_EXEC_RES_M_YOBJ;
+        target->add_list_element(value);
+        scope_->update_last_exec_res(value);
+        return true;
     }
     if (instanceof<While>(code)) {
         While *while_ = dynamic_cast<While *>(code);
