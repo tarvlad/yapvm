@@ -13,6 +13,7 @@ using namespace yapvm::interpreter;
 
 
 int main(int argc, char **argv) {
+    constexpr bool gc_enabled = true;
     if (argc != 2) {
         std::cout << "Error: need to specify main file" << std::endl;
     }
@@ -27,13 +28,24 @@ int main(int argc, char **argv) {
     ygc::YGC gc(interpreter.get_scope(), &tm);
     interpreter.launch();
 
-    gc.collect();
+    if (gc_enabled) {
+        gc.collect();
+    } else {
+        Logger::log("no-gc wait other threads");
+        while (true) {
+            std::optional<std::vector<Interpreter *>> interpreters_opt;
+            do {
+                interpreters_opt = tm.get_all_interpreters();
+            } while (!interpreters_opt.has_value());
 
-    //Logger::log("no-gc wait other threads");
-    //while (!tm.get_all_interpreters().value().empty()) {
-    //    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //}
-    //tm.finish_waiting();
+            if (!interpreters_opt.value().empty()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            } else {
+                break;
+            }
+        }
+        tm.finish_waiting();
+    }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     Logger::log(

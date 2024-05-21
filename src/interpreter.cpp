@@ -339,6 +339,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
 
         if (left->get_typename() != right->get_typename()) {
             ManagedObject *resobj = new ManagedObject{ new YObject{ "bool", new bool{ false } } };
+            register_queue_.push(resobj);
             scope_->update_last_exec_res(resobj);
             return;
         }
@@ -506,6 +507,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
             ManagedObject *resobj = new ManagedObject{
                 new YObject{ "int", new ssize_t{ static_cast<ssize_t>(reinterpret_cast<size_t>(thread)) } }
             };
+            register_queue_.push(resobj);
             scope_->update_last_exec_res(resobj);
             Logger::log("Interpreter",
                 "created and launched new thread with interpreter ["

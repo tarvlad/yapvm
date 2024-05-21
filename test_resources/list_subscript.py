@@ -2,7 +2,7 @@ i = 0
 j = 0
 l = list()
 
-while i < 1000000:
+while i < 100:
     l = list()
-    while j < 100000:
+    while j < 1000:
         l += j
