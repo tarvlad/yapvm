@@ -13,24 +13,21 @@ def p(n):
     return
 
 
-threaded = False
+threaded = True
+n_threads = 4
 n = 100000
 
-t1 = __yapvm_thread(p, n)
-if not threaded:
-    __yapvm_thread_join(t1)
+threads = list()
 
-t2 = __yapvm_thread(p, n)
-if not threaded:
-    __yapvm_thread_join(t2)
-
-t3 = __yapvm_thread(p, n)
-if not threaded:
-    __yapvm_thread_join(t3)
-
-p(n)
+i = 0
+while i != n_threads:
+    threads += __yapvm_thread(p, n)
+    if not threaded:
+        __yapvm_thread_join(threads[i])
+    i = i + 1
 
 if threaded:
-    __yapvm_thread_join(t1)
-    __yapvm_thread_join(t2)
-    __yapvm_thread_join(t3)
+    i = 0
+    while i != n_threads:
+        __yapvm_thread_join(threads[i])
+        i = i + 1

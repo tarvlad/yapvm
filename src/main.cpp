@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     ThreadManager tm;
-    Interpreter interpreter(std::move(module), &tm);
-    ygc::YGC gc(interpreter.get_scope(), &tm);
-    interpreter.launch();
+    Interpreter *interpreter = new Interpreter(std::move(module), &tm);
+    ygc::YGC gc(interpreter->get_scope(), &tm);
+    interpreter->launch();
 
     gc.collect();
 

@@ -664,7 +664,6 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         std::string scope_name = Scope::scope_entry_call_subscope_name(func_name);
         scope_->change(scope_name, ScopeEntry{ new Scope{ scope_ }, SCOPE });
         scope_ = static_cast<Scope *>(scope_->get(scope_name).value().value_);
-        scope_->change(Scope::function_ret_label, ScopeEntry{ nullptr, LABEL });
 
         if (call->args().size() != function_def->args().size()) {
             throw std::runtime_error("Interpreter: invalid number of arguments for function " + func_name);
@@ -766,13 +765,6 @@ bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
             interpret_expr(rt->value());
         }
 
-        while (!scope_->get(Scope::function_ret_label).has_value()) {
-            Scope *prev = scope_;
-            scope_ = scope_->parent();
-            scope_->change(Scope::lst_exec_res, prev->get(Scope::lst_exec_res).value());
-            delete prev;
-        }
-
         if (scope_ == main_scope_) {
             finishing_.store(true);
             return false;
@@ -837,9 +829,6 @@ bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     }
     if (instanceof<While>(code)) {
         While *while_ = dynamic_cast<While *>(code);
-        scope_->change(Scope::while_loop_scope, ScopeEntry{ new Scope{ scope_ }, SCOPE });
-        scope_ = static_cast<Scope *>(scope_->get(Scope::while_loop_scope).value().value_);
-
         while (true) {
             interpret_expr(while_->test());
             YObject *test_res = LAST_EXEC_RES_YOBJ;
@@ -865,8 +854,6 @@ bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
     }
     if (instanceof<If>(code)) {
         If *if_ = dynamic_cast<If *>(code);
-        scope_->change(Scope::if_scope, ScopeEntry{ new Scope{ scope_ }, SCOPE });
-        scope_ = static_cast<Scope *>(scope_->get(Scope::if_scope).value().value_);
 
         interpret_expr(if_->test());
         YObject *test_res = LAST_EXEC_RES_YOBJ;
@@ -914,7 +901,6 @@ bool yapvm::interpreter::Interpreter::interpret(Node *code) {
 
 yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadManager *tm, Scope *scope) :
     code_{code.steal()}, scope_{scope}, main_scope_{scope_}, thread_manager_{tm} {
-    main_scope_->change(Scope::function_ret_label, ScopeEntry{nullptr, LABEL});
     while (!tm->register_interpreter(this)) {
         handle_safepoint();
     }

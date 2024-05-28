@@ -36,9 +36,6 @@ class Scope {
 
 public:
     constexpr static const char *lst_exec_res = "__yapvm_inner_last_exec_res";
-    constexpr static const char *while_loop_scope = "__yapvm_inner_while_loop_scope";
-    constexpr static const char *if_scope = "__yapvm_inner_if_scope";
-    constexpr static const char *function_ret_label = "__yapvm_inner_function_return_label";
     constexpr static const char *yapvm_thread_func_name = "__yapvm_thread";
     constexpr static const char *yapvm_thread_join_func_name = "__yapvm_thread_join";
 
