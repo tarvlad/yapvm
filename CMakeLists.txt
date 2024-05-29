@@ -5,7 +5,7 @@ project(yapvm)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#add_compile_options(-fsanitize=address)
+add_compile_options(-DMAX_HS=500)
 #add_link_options(-fsanitize=address)
 
 include_directories(include)

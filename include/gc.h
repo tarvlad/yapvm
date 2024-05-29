@@ -22,10 +22,17 @@ class YGC {
     Scope *root_;
     std::vector<ManagedObject *> left_{};
     std::vector<ManagedObject *> right_{};
+#ifdef MAX_HS
+    size_t hs_count = 0;
+#endif
 public:
     YGC(Scope *root, ThreadManager *tm) : root_(root), tm_(tm),
     left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()) {
    //     collect();
+    };
+    ~YGC() noexcept {
+        mark();
+        sweep();
     };
 //private:
     void mark();

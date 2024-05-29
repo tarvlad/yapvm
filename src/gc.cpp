@@ -63,6 +63,9 @@ void YGC::sweep() {
     for (ManagedObject *obj : left_) {
         if (!obj->is_marked()) {
             delete(obj);
+#ifdef MAX_HS
+            hs_count -= sizeof(ManagedObject);
+#endif
         } else {
             obj->unmark();
             right_.push_back(obj);
@@ -121,6 +124,14 @@ void YGC::collect() {
         for (Interpreter *i : interprets) {
             std::vector<ManagedObject *> register_queue = i->get_register_queue();
             for (ManagedObject *mo : register_queue) {
+#ifdef MAX_HS
+                if (mo->value()->get_typename() == "string") {
+                    hs_count += mo->value()->get_value_as_string().size();
+                }
+                
+                hs_count += sizeof(ManagedObject);
+                assert(hs_count < MAX_HS);
+#endif
                 left_.push_back(mo);
             }
         }
