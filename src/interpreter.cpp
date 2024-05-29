@@ -105,7 +105,7 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
         interpret_expr(bin_op->right());
         YObject *right = LAST_EXEC_RES_YOBJ;
 
-        if (left->get_typename() != right->get_typename()) {
+        if (left->get_typename() != right->get_typename() && left->get_typename() != "string") {
             throw std::runtime_error("Interpreter: BinOp operands currently need to be same type");
         }
 
