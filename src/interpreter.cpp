@@ -179,6 +179,17 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
                 res += left->get_value_as_float();
                 res *= right->get_value_as_float();
                 resobj = new ManagedObject{ new YObject{ "float", new double{ res } } };
+            } else if (left->get_typename() == "string") {
+                std::string res;
+                if (right->get_typename() != "int") {
+                    throw std::runtime_error("Interpreter: Mult for string require int as right argument");
+                }
+                std::string base = left->get_value_as_string();
+                ssize_t times = right->get_value_as_int();
+                for (size_t i = 0; i < times; i++) {
+                    res += base;
+                }
+                resobj = new ManagedObject{ new YObject{ "string", new std::string{ std::move(res) } } };
             } else { //TODO
                 throw std::runtime_error("Interpreter: Mult not supported for " + left->get_typename());
             }
