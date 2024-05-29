@@ -22,16 +22,27 @@ class YGC {
     Scope *root_;
     std::vector<ManagedObject *> left_{};
     std::vector<ManagedObject *> right_{};
+
+    bool need_check_hs_ = false;
+    ssize_t max_hs_ = -1;
 public:
     YGC(Scope *root, ThreadManager *tm) : root_(root), tm_(tm),
-    left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()) {
-   //     collect();
+    left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()) {};
+
+    YGC(Scope *root, ThreadManager *tm, ssize_t max_hs) : root_(root), tm_(tm),
+    left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()),
+          max_hs_(max_hs), need_check_hs_(true) {};
+
+    ~YGC() noexcept {
+        mark();
+        sweep();
     };
-//private:
+
     void mark();
     void sweep();
     void collect();
-    // TODO function inly for testing, will be deprecated
+
+    // TODO function only for testing, will be deprecated
     void fill_left(std::vector<ManagedObject *> &);
     std::vector<ManagedObject *> &left();
 };

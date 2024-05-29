@@ -3,6 +3,7 @@
 #include <deque>
 #include <thread>
 #include <unordered_set>
+#include <iostream>
 
 #include "interpreter.h"
 #include "logger.h"
@@ -69,6 +70,7 @@ void YGC::sweep() {
         if (!obj->is_marked()) {
             delete(obj);
             deleted_ctr++;
+            if (need_check_hs_) max_hs_ += sizeof(ManagedObject);
         } else {
             obj->unmark();
             right_.push_back(obj);
@@ -128,7 +130,19 @@ void YGC::collect() {
         Logger::log("GC", "registering allocated objects");
         for (Interpreter *i : interprets) {
             std::vector<ManagedObject *> register_queue = i->get_register_queue();
+            std::cout << register_queue.size() << std::endl;
             for (ManagedObject *mo : register_queue) {
+                if (need_check_hs_) {
+                    if (mo->value()->get_typename() == "string") {
+                        max_hs_ -= mo->value()->get_value_as_string().size();
+                        std::cout << max_hs_ << std::endl;
+                    }
+                    max_hs_ -= sizeof(ManagedObject);
+                    if (max_hs_ < 0) {
+                        throw std::runtime_error("GC: max heap size exceeded");
+                    }
+                }
+
                 left_.push_back(mo);
             }
         }
