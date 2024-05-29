@@ -1,7 +1,7 @@
 #from test_resources.yapvm_cpython_thread_support import __yapvm_thread, __yapvm_thread_join
 
 n = 1000000
-num_workers = 1
+num_workers = 4
 batch_size = int(n / num_workers)
 
 v1 = list()

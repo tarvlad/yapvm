@@ -801,6 +801,7 @@ bool yapvm::interpreter::Interpreter::interpret_stmt(Stmt *code) {
 
         if (scope_ == main_scope_) {
             finishing_.store(true);
+            delete main_scope_;
             return false;
         }
         Scope *prev = scope_;
@@ -941,7 +942,9 @@ yapvm::interpreter::Interpreter::Interpreter(scoped_ptr<Module> &&code, ThreadMa
 }
 
 
-yapvm::interpreter::Interpreter::~Interpreter() { delete code_; }
+yapvm::interpreter::Interpreter::~Interpreter() {
+    delete code_;
+}
 
 
 void yapvm::interpreter::Interpreter::park() { need_park_.store(true); }

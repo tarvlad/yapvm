@@ -3,11 +3,10 @@
 #include "y_objects.h"
 #include "scope.h"
 #include "thread_manager.h"
-#include <map>
 #include <string>
 #include <vector>
 
-#define GC_CASH_LIMIT 500
+#define GC_CASH_LIMIT 5000
 
 // TODO need to register all ManagedObject allocations
 // TODO Only GC can clean ManagedObject
@@ -24,19 +23,14 @@ class YGC {
     std::vector<ManagedObject *> right_{};
 
     bool need_check_hs_ = false;
-    ssize_t max_hs_ = -1;
+    size_t max_hs_ = -1;
 public:
     YGC(Scope *root, ThreadManager *tm) : root_(root), tm_(tm),
     left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()) {};
 
-    YGC(Scope *root, ThreadManager *tm, ssize_t max_hs) : root_(root), tm_(tm),
+    YGC(Scope *root, ThreadManager *tm, size_t max_hs) : root_(root), tm_(tm),
     left_(std::vector<ManagedObject *>()), right_(std::vector<ManagedObject *>()),
           max_hs_(max_hs), need_check_hs_(true) {};
-
-    ~YGC() noexcept {
-        mark();
-        sweep();
-    };
 
     void mark();
     void sweep();

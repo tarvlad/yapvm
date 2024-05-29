@@ -83,6 +83,7 @@ bool yapvm::interpreter::ThreadManager::finish_waiting() {
             Interpreter *beg = join_queue_.front();
             join_queue_.pop_front();
             beg->join();
+            delete beg;
         }
         return true;
     }

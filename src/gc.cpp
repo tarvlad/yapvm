@@ -77,7 +77,7 @@ void YGC::sweep() {
         }
     }
     left_.swap(right_);
-    right_.clear();
+    right_ = {};
 
     Logger::log("GC", "sweep", "deleted " + std::to_string(deleted_ctr) + " dead objects");
 }
@@ -130,12 +130,10 @@ void YGC::collect() {
         Logger::log("GC", "registering allocated objects");
         for (Interpreter *i : interprets) {
             std::vector<ManagedObject *> register_queue = i->get_register_queue();
-            std::cout << register_queue.size() << std::endl;
             for (ManagedObject *mo : register_queue) {
                 if (need_check_hs_) {
                     if (mo->value()->get_typename() == "string") {
-                        max_hs_ -= mo->value()->get_value_as_string().size();
-                        std::cout << max_hs_ << std::endl;
+                        max_hs_ -= static_cast<size_t>(mo->value()->get_value_as_string().size());
                     }
                     max_hs_ -= sizeof(ManagedObject);
                     if (max_hs_ < 0) {
