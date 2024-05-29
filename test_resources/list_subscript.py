@@ -7,6 +7,6 @@ while i != 100:
     l = list()
     j = 0
     while j != 100000:
-        l += j
+        l.append(j)
         j = j + 1
     i = i + 1

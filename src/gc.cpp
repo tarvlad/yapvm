@@ -20,6 +20,8 @@ void YGC::mark() {
         obj->mark();
         deq.push_back(obj);
     }
+    size_t counter = root_objects.size();
+    Logger::log("GC", "mark", "found " + std::to_string(counter) + " root objects");
 
     while (!deq.empty()) {
         ManagedObject *curr_obj = deq.front();
@@ -33,11 +35,13 @@ void YGC::mark() {
         if (kids.empty()) continue;
         for (ManagedObject *kid : kids) {
             if (!kid->is_marked()) {
+                counter++;
                 kid->mark();
                 deq.push_back(kid);
             }
         }
     }
+    Logger::log("GC", "mark", "marked " + std::to_string(counter) + " live objects");
 }
 
 static bool is_unique(const std::vector<ManagedObject *> &muobj) {
@@ -59,17 +63,21 @@ static bool is_unique(const std::vector<ManagedObject *> &muobj) {
 }
 
 void YGC::sweep() {
+    size_t deleted_ctr = 0;
     assert(is_unique(left_));
     for (ManagedObject *obj : left_) {
         if (!obj->is_marked()) {
             delete(obj);
+            deleted_ctr++;
         } else {
             obj->unmark();
             right_.push_back(obj);
         }
     }
-   left_.swap(right_);
-   right_.clear();
+    left_.swap(right_);
+    right_.clear();
+
+    Logger::log("GC", "sweep", "deleted " + std::to_string(deleted_ctr) + " dead objects");
 }
 
 void YGC::fill_left(std::vector<ManagedObject *> &vec) {
@@ -127,6 +135,7 @@ void YGC::collect() {
         
         if (left_.size() >= GC_CASH_LIMIT) {
             Logger::log("GC", "GC_CASH_LIMIT over, mark and sweep started...");
+            Logger::log("GC","in heap now " + std::to_string(left_.size()) + " objects");
             mark();
             sweep();
         }

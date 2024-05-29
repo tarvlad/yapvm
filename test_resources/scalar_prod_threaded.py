@@ -1,7 +1,7 @@
 #from test_resources.yapvm_cpython_thread_support import __yapvm_thread, __yapvm_thread_join
 
 n = 1000000
-num_workers = 8
+num_workers = 1
 batch_size = int(n / num_workers)
 
 v1 = list()
@@ -9,8 +9,8 @@ v2 = list()
 
 i = 0
 while i < n:
-    v1 += i
-    v2 += n - (i + 1)
+    v1.append(i)
+    v2.append(n - (i + 1))
     i = i + 1
 
 
@@ -42,13 +42,13 @@ worker_idx = 0
 
 while worker_idx < num_workers:
     args = list()
-    args += v1
-    args += v2
-    args += batch_size * worker_idx
-    args += batch_size * (worker_idx + 1)
-    args += results
-    args += worker_idx
-    workers += __yapvm_thread(worker_job, args)
+    args.append(v1)
+    args.append(v2)
+    args.append(batch_size * worker_idx)
+    args.append(batch_size * (worker_idx + 1))
+    args.append(results)
+    args.append(worker_idx)
+    workers.append(__yapvm_thread(worker_job, args))
     worker_idx = worker_idx + 1
 
 print("Workers created, waiting... ")

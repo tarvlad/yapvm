@@ -464,10 +464,33 @@ void yapvm::interpreter::Interpreter::interpret_expr(Expr *code) {
     }
     if (instanceof<Call>(code)) {
         Call *call = dynamic_cast<Call *>(code);
-        if (!instanceof<Name>(call->func().get())) {
+        if (!instanceof<Name>(call->func().get()) && !instanceof<Attribute>(call->func().get())) {
             throw std::runtime_error("Interpreter: Call.func should be Name");
         }
-        const std::string &func_name = dynamic_cast<Name *>(call->func().get())->id();
+
+        if (instanceof<Attribute>(call->func().get())) {
+            Attribute *attribute = dynamic_cast<Attribute *>(call->func().get());
+            interpret_expr(attribute->value());
+            YObject *target = LAST_EXEC_RES_YOBJ;
+            if (target->get_typename() != "list") {
+                throw std::runtime_error("Interpreter: Currently only list attributes");
+            }
+
+            std::string attr = attribute->attr();
+            if (attr != "append") {
+                throw std::runtime_error("Interpreter: Currently supported only list.append as attribute");
+            }
+            if (call->args().size() != 1) {
+                throw std::runtime_error("Interpreter: list.append require 1 argument");
+            }
+            interpret_expr(call->args()[0]);
+
+            ManagedObject *arg = LAST_EXEC_RES_M_YOBJ;
+            target->add_list_element(arg);
+            return;
+        }
+
+        std::string func_name = dynamic_cast<Name *>(call->func().get())->id();
         if (func_name == "print") {
             if (call->args().size() != 1) {
                 throw std::runtime_error("Interpreter: print can take only 1 argument");
